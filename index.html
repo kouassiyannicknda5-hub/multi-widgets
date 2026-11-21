@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1c2b3a">
+<link rel="icon" href="icons/icon-192.png">
+<title>Multi-Widgets – version 2</title>
+<style>
+:root{--wall1:#1c2b3a;--wall2:#3b2a4d;--panel:#f4f6f8;--ink:#14181d;--mute:#5d6875;--line:#d5dae0;--accent:#ff7a1a;--tile:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--panel:#1b2128;--ink:#eef1f4;--mute:#9aa6b3;--line:#323b45;--tile:#252d36}}
+:root[data-theme="dark"]{--panel:#1b2128;--ink:#eef1f4;--mute:#9aa6b3;--line:#323b45;--tile:#252d36}
+*{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--ink);background:linear-gradient(160deg,var(--wall1),var(--wall2));overflow:hidden}
+#screen{position:relative;height:100%;width:100%;overflow:hidden}
+#top{position:absolute;top:0;left:0;right:0;z-index:5000;display:flex;align-items:center;gap:10px;padding:8px 12px;color:#e8ecf1;font-size:13px}
+#top span{flex:1}
+#new{background:var(--accent);color:#fff;border-radius:16px;padding:7px 14px;font-weight:700;font-size:13px}
+#new:disabled{opacity:.4;cursor:not-allowed}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.w{position:absolute;background:var(--panel);border-radius:16px;box-shadow:0 12px 34px rgba(0,0,0,.45);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 10px;cursor:grab;touch-action:none;user-select:none;color:var(--ink);border-bottom:1px solid var(--line)}
+.bar .n{flex:1;font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar button{font-size:15px;padding:2px 6px;color:var(--mute)}
+.body{flex:1;overflow:auto;padding:10px}
+.pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.pick button{background:var(--tile);border:1px solid var(--line);border-radius:12px;padding:10px 4px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.pick b{font-size:22px;font-weight:400}
+.app{height:100%;display:flex;flex-direction:column;gap:8px}
+.app .hd{border-radius:10px;padding:8px 10px;color:#fff;font-weight:700;font-size:13px}
+.app i{display:block;height:9px;border-radius:5px;background:var(--line)}
+.app i:nth-child(3){width:72%}.app i:nth-child(4){width:88%}.app i:nth-child(5){width:55%}
+.go{margin-top:auto;text-align:center;background:var(--accent);color:#fff;text-decoration:none;border-radius:10px;padding:9px;font-weight:700;font-size:13px}
+.rs{position:absolute;right:0;bottom:0;width:32px;height:32px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 52%,var(--mute) 52%,var(--mute) 58%,transparent 58%,transparent 70%,var(--mute) 70%,var(--mute) 76%,transparent 76%)}
+#hint{position:absolute;left:16px;right:16px;bottom:14px;color:#e8ecf1;font-size:12px;opacity:.75;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="screen">
+  <div id="top"><span id="cnt"></span><button id="new">+ Widget</button></div>
+  <div id="hint">Chaque widget ouvre une seule application. Glisse sa barre pour le déplacer, tire son coin pour le redimensionner.</div>
+</div>
+<script>
+var APPS=[["WhatsApp","#1faa59","💬"],["Chrome","#4285f4","🌐"],["Facebook","#1877f2","👥"],["Google","#ea4335","🔎"],["Instagram","#c13584","📷"],["YouTube","#e62117","▶"],["Gmail","#d93025","✉"],["Maps","#0f9d58","📍"],["Telegram","#229ed9","✈"],["TikTok","#222","♪"]];
+var URLS=["https://web.whatsapp.com","https://www.google.com/chrome","https://m.facebook.com","https://www.google.com","https://www.instagram.com","https://m.youtube.com","https://mail.google.com","https://maps.google.com","https://web.telegram.org","https://www.tiktok.com"];
+var MAX=10,S=document.getElementById("screen"),NEW=document.getElementById("new"),list=[],z=10,uid=0;
+function count(){document.getElementById("cnt").textContent=list.length+" widget"+(list.length>1?"s":"")+" sur "+MAX;NEW.disabled=list.length>=MAX}
+function fill(w){
+  var b=w.el.querySelector(".body"),n=w.el.querySelector(".n"),sw=w.el.querySelector(".sw");
+  if(w.app===null){
+    n.textContent="Choisir une application";sw.style.display="none";
+    var h='<div class="pick">';APPS.forEach(function(a,i){h+='<button data-i="'+i+'"><b>'+a[2]+'</b>'+a[0]+'</button>'});
+    b.innerHTML=h+'</div>';
+  }else{
+    var a=APPS[w.app];n.textContent=a[2]+" "+a[0];sw.style.display="";
+    b.innerHTML='<div class="app"><div class="hd" style="background:'+a[1]+'">'+a[0]+'</div><i></i><i></i><i></i><a class="go" href="'+URLS[w.app]+'" target="_blank" rel="noopener">Ouvrir le site</a></div>';
+  }
+}
+function geo(w){var s=w.el.style;s.left=w.x+"px";s.top=w.y+"px";s.width=w.w+"px";s.height=w.h+"px"}
+function clamp(w){
+  var sw=S.clientWidth,sh=S.clientHeight;
+  w.w=Math.max(150,Math.min(w.w,sw));w.h=Math.max(130,Math.min(w.h,sh-40));
+  w.x=Math.max(0,Math.min(w.x,sw-w.w));w.y=Math.max(40,Math.min(w.y,sh-w.h));
+}
+function drag(el,w,fn){
+  el.addEventListener("pointerdown",function(e){
+    if(e.target.closest("button"))return;
+    e.preventDefault();el.setPointerCapture(e.pointerId);
+    var sx=e.clientX,sy=e.clientY,o={x:w.x,y:w.y,w:w.w,h:w.h};
+    function mv(ev){fn(o,ev.clientX-sx,ev.clientY-sy);clamp(w);geo(w)}
+    function up(){el.removeEventListener("pointermove",mv);el.removeEventListener("pointerup",up);el.removeEventListener("pointercancel",up)}
+    el.addEventListener("pointermove",mv);el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);
+  });
+}
+function add(app){
+  if(list.length>=MAX)return;
+  var k=list.length,sw=S.clientWidth,el=document.createElement("div");
+  el.className="w";
+  el.innerHTML='<div class="bar"><span class="n"></span><button class="sw" aria-label="Changer d’application">⇄</button><button class="cl" aria-label="Fermer le widget">✕</button></div><div class="body"></div><div class="rs" aria-label="Redimensionner"></div>';
+  var w={id:uid++,el:el,app:app,x:12+(k%6)*22,y:52+(k%6)*30,w:Math.min(300,sw-24),h:230};
+  clamp(w);el.style.zIndex=++z;S.appendChild(el);list.push(w);geo(w);fill(w);count();
+  el.addEventListener("pointerdown",function(){el.style.zIndex=++z},true);
+  el.querySelector(".cl").addEventListener("click",function(){el.remove();list=list.filter(function(v){return v!==w});count()});
+  el.querySelector(".sw").addEventListener("click",function(){w.app=null;fill(w)});
+  el.querySelector(".body").addEventListener("click",function(e){var b=e.target.closest("button[data-i]");if(b){w.app=+b.getAttribute("data-i");fill(w)}});
+  drag(el.querySelector(".bar"),w,function(o,dx,dy){w.x=o.x+dx;w.y=o.y+dy});
+  drag(el.querySelector(".rs"),w,function(o,dx,dy){w.w=o.w+dx;w.h=o.h+dy});
+}
+NEW.addEventListener("click",function(){add(null)});
+window.addEventListener("resize",function(){list.forEach(function(w){clamp(w);geo(w)})});
+add(null);
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
+</script>
+</body>
+</html>
