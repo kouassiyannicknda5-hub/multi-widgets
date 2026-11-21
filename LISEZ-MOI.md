@@ -61,3 +61,26 @@ puis ouvrir http://localhost:8000.
 
 ## Licence
 MIT — voir le fichier `LICENSE`.
+
+## Widget NATIF d'écran d'accueil (Android)
+Une page web ne peut **jamais** dessiner sur l'écran d'accueil en dehors de sa
+propre fenêtre : c'est une limite de sécurité des navigateurs. Le dossier
+`android/` contient donc un compagnon natif qui fait exactement ce que le Web
+ne peut pas faire :
+
+- un **vrai widget Android** posé sur l'écran d'accueil (grille de 8 cases),
+  vivant en dehors de toute application ouverte ;
+- **un toucher sur une case ouvre directement l'application** dans le
+  navigateur : Multi-Widgets ne s'ouvre jamais ;
+- l'application native ne sert qu'une fois, de `/app` natif : ajouter ou
+  retirer des applications ; le widget se redessine immédiatement.
+
+### Obtenir l'APK sans installer Android Studio
+1. GitHub → onglet **Actions** → workflow **APK** → dernière exécution verte.
+2. Télécharger l'artefact `multi-widgets-widget` (contient `app-debug.apk`).
+3. Copier l'APK sur le téléphone et l'installer (sources inconnues autorisées).
+
+### Poser le widget
+Appui long sur l'écran d'accueil → **Widgets** → « Multi-Widgets » → glisser
+sur l'écran. C'est fini : les cases lancent les sites d'un toucher, sans
+ouvrir aucune application.

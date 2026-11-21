@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Le widget : une grille de 8 cases posée sur l'écran d'accueil.
+     Chaque case ouvre directement son application dans le navigateur :
+     aucune activité de Multi-Widgets ne s'ouvre. -->
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:columnCount="4"
+    android:rowCount="2"
+    android:padding="4dp">
+
+    <TextView android:id="@+id/cell0" style="@style/Cell" />
+    <TextView android:id="@+id/cell1" style="@style/Cell" />
+    <TextView android:id="@+id/cell2" style="@style/Cell" />
+    <TextView android:id="@+id/cell3" style="@style/Cell" />
+    <TextView android:id="@+id/cell4" style="@style/Cell" />
+    <TextView android:id="@+id/cell5" style="@style/Cell" />
+    <TextView android:id="@+id/cell6" style="@style/Cell" />
+    <TextView android:id="@+id/cell7" style="@style/Cell" />
+
+</GridLayout>
