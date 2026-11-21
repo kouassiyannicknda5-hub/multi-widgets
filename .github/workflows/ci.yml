@@ -43,7 +43,7 @@ jobs:
           print("manifeste OK :", len(m["icons"]), "icônes, purposes", sorted(purposes))
           PY
 
-      - name: Service worker : stratégie de mise à jour présente
+      - name: "Service worker : stratégie de mise à jour présente"
         run: |
           python3 - <<'PY'
           sw = open("sw.js", encoding="utf-8").read()
