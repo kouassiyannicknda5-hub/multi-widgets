@@ -23,7 +23,24 @@ exactly one application — the tile is a simulated preview, and its
 
 1. Host this folder on any HTTPS host (GitHub Pages, Netlify, Render…).
 2. Open the address in Chrome (Android).
-3. Menu ⋮ → *Install app* (or *Add to Home screen*).
+3. The **"Install Multi-Widgets"** banner shows up with an **Install**
+   button — or use Menu ⋮ → *Install app*.
+
+### The in-app "Install app" button
+
+As soon as the site meets Chrome's install criteria (HTTPS, complete
+manifest, active service worker), the app intercepts
+`beforeinstallprompt` and shows its own install banner, the way major
+sites do: the **Install** button opens Chrome's native dialog. Without
+that interception, Chrome's infobar only appears according to the
+browser's own engagement heuristics.
+
+- A **⤓** button stays in the top bar to retry later, even after
+  dismissing the banner ("Later", or refusing the dialog).
+- Once installed (`appinstalled`), banner and button disappear: the app
+  knows it already runs installed (`display-mode: standalone`).
+- On iPhone/iPad, which lack `beforeinstallprompt`, the banner explains
+  the manual path instead: Share → *Add to Home Screen*.
 
 ## Test on a computer
 

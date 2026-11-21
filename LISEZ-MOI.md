@@ -7,7 +7,25 @@ lance la vraie version web.
 ## Utiliser sur le téléphone
 1. Mettre le dossier sur un hébergement HTTPS (GitHub Pages, Render, Netlify…).
 2. Ouvrir l'adresse dans Chrome (Android).
-3. Menu ⋮ puis « Installer l'application » (ou « Ajouter à l'écran d'accueil »).
+3. Le bandeau « Installer Multi-Widgets » apparaît avec un bouton
+   **Installer** ; ou menu ⋮ puis « Installer l'application ».
+
+## Le bouton « Installer l'application »
+Dès que le site respecte les critères de Chrome (hébergement HTTPS, manifeste
+complet, service worker actif), l'application intercepte l'événement
+`beforeinstallprompt` et affiche son propre bandeau d'installation, comme les
+grands sites : le bouton **Installer** ouvre la boîte de dialogue native de
+Chrome. Sans cette interception, l'infobar native ne sort que selon les
+heuristiques de fréquentation du navigateur.
+
+- Un bouton **⤓** reste dans la barre du haut pour relancer l'installation
+  plus tard, même après avoir fermé le bandeau (« Plus tard » ou refus).
+- Une fois l'application installée (événement `appinstalled`), bandeau et
+  bouton disparaissent : l'application sait qu'elle tourne déjà installée
+  (`display-mode: standalone`).
+- Sur iPhone et iPad, qui ne connaissent pas `beforeinstallprompt`, le
+  bandeau explique la marche à suivre manuelle : bouton Partager puis
+  « Sur l'écran d'accueil ».
 
 ## Tester sur ordinateur
 Servir le dossier (l'installation et le service worker demandent HTTPS) :
