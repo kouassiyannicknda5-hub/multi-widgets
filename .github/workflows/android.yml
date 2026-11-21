@@ -10,6 +10,12 @@ on:
       - "android/**"
       - ".github/workflows/android.yml"
 
+# Le jeton par défaut des workflows peut être en lecture seule :
+# on déclare explicitement le droit d'écrire dans l'issue de diagnostics.
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   build:
     name: Construire l'APK du widget natif
