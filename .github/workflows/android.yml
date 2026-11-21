@@ -32,10 +32,28 @@ jobs:
 
       - name: Construire app-debug.apk
         run: |
+          set -o pipefail
           cd android
-          gradle assembleDebug --no-daemon --stacktrace
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/gradle.log
+
+      # Les journaux Actions ne sont pas téléchargeables depuis le sandbox de
+      # développement : en cas d'échec, on publie la fin du journal Gradle en
+      # commentaire de l'issue de diagnostics, lisible depuis partout.
+      - name: Publier le journal d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Échec du build APK — exécution ${{ github.run_id }} :"
+            echo '```'
+            tail -n 100 /tmp/gradle.log || echo "(journal introuvable)"
+            echo '```'
+          } > /tmp/tail.md
+          gh issue comment 4 --body-file /tmp/tail.md
 
       - name: Publier l'APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: multi-widgets-widget
