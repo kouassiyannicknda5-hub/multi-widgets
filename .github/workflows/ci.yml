@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    name: Validation statique
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Syntaxe JavaScript (sw.js + script de index.html)
+        run: |
+          node --check sw.js
+          python3 - <<'PY'
+          import re, pathlib
+          html = pathlib.Path("index.html").read_text(encoding="utf-8")
+          m = re.search(r"<script>(.*)</script>", html, re.S)
+          assert m, "aucun bloc <script> trouvé dans index.html"
+          pathlib.Path("/tmp/app.js").write_text(m.group(1), encoding="utf-8")
+          print("script extrait :", len(m.group(1)), "caractères")
+          PY
+          node --check /tmp/app.js
+
+      - name: Manifeste cohérent avec le disque
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          m = json.load(open("manifest.json", encoding="utf-8"))
+          for field in ("id", "scope", "start_url", "description"):
+              assert m.get(field), f"manifest.json : champ '{field}' manquant"
+          purposes = set()
+          for icon in m["icons"]:
+              assert os.path.exists(icon["src"]), f"icône introuvable : {icon['src']}"
+              purposes.add(icon.get("purpose", "any"))
+          assert "maskable" in purposes, "manifest.json : aucune icône maskable"
+          print("manifeste OK :", len(m["icons"]), "icônes, purposes", sorted(purposes))
+          PY
+
+      - name: "Service worker : stratégie de mise à jour présente"
+        run: |
+          python3 - <<'PY'
+          sw = open("sw.js", encoding="utf-8").read()
+          for needle, why in (
+              ("activate", "purge des anciens caches"),
+              ("clients.claim", "prise de main sur les onglets ouverts"),
+              ('mode === "navigate"', "navigation réseau d'abord"),
+          ):
+              assert needle in sw, f"sw.js : '{needle}' absent ({why})"
+          print("stratégie de mise à jour OK")
+          PY
+
+      - name: Ressources précachées présentes
+        run: |
+          python3 - <<'PY'
+          import re, os
+          sw = open("sw.js", encoding="utf-8").read()
+          block = re.search(r"PRECACHE\s*=\s*\[(.*?)\]", sw, re.S).group(1)
+          urls = re.findall(r'"([^"]+)"', block)
+          missing = [u for u in urls if not os.path.exists(u.rstrip("/").replace("./", "index.html"))]
+          assert not missing, f"ressources introuvables : {missing}"
+          print("précache OK :", urls)
+          PY
+
+      - name: Tests fonctionnels (jsdom)
+        run: |
+          npm install --no-audit --no-fund
+          npm test

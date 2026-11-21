@@ -1,0 +1,17 @@
+# Systèmes d'exploitation
+.DS_Store
+Thumbs.db
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+
+# Outils et builds (le site est statique : rien de tout ceci n'est attendu,
+# mais il ne faut pas qu'un outil qui passe y dépose ses déchets)
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.env
