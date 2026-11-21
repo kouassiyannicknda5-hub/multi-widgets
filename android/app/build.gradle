@@ -1,0 +1,32 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'app.multiwidgets'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "app.multiwidgets"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+/* Aucune dépendance externe : AppWidgetProvider, RemoteViews et org.json
+   font partie du framework Android lui-même. */
+dependencies {
+}

@@ -72,3 +72,25 @@ npm install && npm test
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Native Android home-screen widget
+
+A web page can **never** draw on the home screen outside its own window —
+that is a browser security boundary. The `android/` folder therefore holds a
+native companion doing exactly what the Web cannot:
+
+- a **real Android widget** (8-cell grid) sitting on the home screen,
+  outside of any opened application;
+- **one tap on a cell opens the application directly** in the browser —
+  Multi-Widgets itself never opens;
+- the native app only ever acts as a native `/app`: add or remove
+  applications, and the widget redraws immediately.
+
+### Get the APK without Android Studio
+1. GitHub → **Actions** → **APK** workflow → latest green run.
+2. Download the `multi-widgets-widget` artifact (`app-debug.apk`).
+3. Install it on the phone (allow unknown sources).
+
+### Place the widget
+Long-press the home screen → **Widgets** → "Multi-Widgets" → drag it out.
+Done: cells launch sites with one tap, without opening any app.

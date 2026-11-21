@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:icon="@mipmap/ic_launcher"
+        android:label="Multi-Widgets"
+        android:theme="@android:style/Theme.DeviceDefault.Light">
+
+        <!-- Écran de réglage du widget (équivalent natif de /app).
+             Une fois le widget posé sur l'écran d'accueil, il n'est plus
+             nécessaire d'ouvrir cette activité : le widget vit seul. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Le widget d'écran d'accueil lui-même : dessiné par le lanceur,
+             en dehors de toute application ouverte. -->
+        <receiver
+            android:name=".Widgets"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
+
+    </application>
+
+</manifest>
