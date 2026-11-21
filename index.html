@@ -9,61 +9,78 @@
 <title>Multi-Widgets</title>
 <style>
 /* --- Palette claire (défaut) --- */
-:root{--wall1:#1c2b3a;--wall2:#3b2a4d;--panel:#f4f6f8;--ink:#14181d;--mute:#5d6875;--line:#d5dae0;--accent:#ff7a1a;--tile:#fff}
+:root{--bg:#e9edf1;--panel:#f4f6f8;--ink:#14181d;--mute:#5d6875;--line:#d5dae0;--accent:#ff7a1a;--tile:#fff}
 
 /* --- Palette sombre ---
-   L'ordre ci-dessous est volontaire : à spécificité égale c'est la dernière
-   règle déclarée qui gagne. On pose donc d'abord les variables communes,
-   ensuite les surcharges du thème système, enfin les deux thèmes explicites.
-   Sans cet ordre, demander « clair » restait sans effet une fois la nuit
-   tombée, car le bloc système (0,2,0) écrasait [data-theme="light"] (0,2,0). */
-:root{--d-wall1:#111a24;--d-wall2:#241a30;--d-panel:#1b2128;--d-ink:#eef1f4;--d-mute:#9aa6b3;--d-line:#323b45;--d-tile:#252d36}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--wall1:var(--d-wall1);--wall2:var(--d-wall2);--panel:var(--d-panel);--ink:var(--d-ink);--mute:var(--d-mute);--line:var(--d-line);--tile:var(--d-tile)}}
-:root[data-theme="dark"]{--wall1:var(--d-wall1);--wall2:var(--d-wall2);--panel:var(--d-panel);--ink:var(--d-ink);--mute:var(--d-mute);--line:var(--d-line);--tile:var(--d-tile)}
-:root[data-theme="light"]{--wall1:#1c2b3a;--wall2:#3b2a4d;--panel:#f4f6f8;--ink:#14181d;--mute:#5d6875;--line:#d5dae0;--tile:#fff}
+   Ordre volontaire : à spécificité égale, la dernière règle déclarée gagne.
+   Variables communes, puis surcharge du thème système, puis thèmes explicites. */
+:root{--d-bg:#10151b;--d-panel:#1b2128;--d-ink:#eef1f4;--d-mute:#9aa6b3;--d-line:#323b45;--d-tile:#252d36}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:var(--d-bg);--panel:var(--d-panel);--ink:var(--d-ink);--mute:var(--d-mute);--line:var(--d-line);--tile:var(--d-tile)}}
+:root[data-theme="dark"]{--bg:var(--d-bg);--panel:var(--d-panel);--ink:var(--d-ink);--mute:var(--d-mute);--line:var(--d-line);--tile:var(--d-tile)}
+:root[data-theme="light"]{--bg:#e9edf1;--panel:#f4f6f8;--ink:#14181d;--mute:#5d6875;--line:#d5dae0;--tile:#fff}
 
 *{box-sizing:border-box}
-html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;height:100%;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--ink);background:linear-gradient(160deg,var(--wall1),var(--wall2));overflow:hidden}
+html{height:100%}
+body{margin:0;height:100%;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--ink);background:var(--bg);overflow:hidden}
 
-/* Les marges d'encoche étaient piégées dans le bloc :root, où elles
-   s'appliquaient à <html> et ne protégeaient donc aucun widget.
-   Elles appartiennent au conteneur qui porte les fenêtres. */
-#screen{position:relative;height:100%;width:100%;overflow:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-#top{position:absolute;top:0;left:0;right:0;z-index:5000;display:flex;align-items:center;gap:10px;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px));color:#e8ecf1;font-size:13px}
-#top span{flex:1}
-#new,#theme{background:var(--accent);color:#fff;border-radius:16px;padding:7px 14px;font-weight:700;font-size:13px}
-#theme{background:rgba(255,255,255,.16);padding:7px 11px}
-#new:disabled{opacity:.4;cursor:not-allowed}
+/* L'application ne « s'ouvre » plus : l'écran EST la pile de widgets.
+   Un clic sur l'icône exécute le premier widget, rien d'autre. */
+#screen{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;overflow:auto;
+padding:calc(10px + env(safe-area-inset-top,0px)) calc(10px + env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) calc(10px + env(safe-area-inset-left,0px))}
+@media (min-width:760px){#screen{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(300px,1fr);align-content:stretch}}
+
+.w{display:flex;flex-direction:column;min-height:250px;background:var(--tile);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.16)}
+.bar{display:flex;align-items:center;gap:4px;padding:6px 7px;border-bottom:1px solid var(--line);background:var(--panel)}
+.bar .n{flex:1;font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:4px}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-.w{position:absolute;background:var(--panel);border-radius:16px;box-shadow:0 12px 34px rgba(0,0,0,.45);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
-.w:focus-visible,.rs:focus-visible,#new:focus-visible,#theme:focus-visible,.bar button:focus-visible,.pick button:focus-visible,.go:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.bar{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 10px;cursor:grab;touch-action:none;user-select:none;color:var(--ink);border-bottom:1px solid var(--line)}
-.bar .n{flex:1;font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bar button{font-size:15px;padding:2px 6px;color:var(--mute)}
-/* pan-y : sans lui, un geste vertical dans la grille d'applications était
-   capté par le widget au lieu de faire défiler son contenu. */
-.body{flex:1;overflow:auto;padding:10px;touch-action:pan-y;-webkit-overflow-scrolling:touch}
-.pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
-.pick button{background:var(--tile);border:1px solid var(--line);border-radius:12px;padding:10px 4px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:4px}
-.pick b{font-size:22px;font-weight:400}
-.app{height:100%;display:flex;flex-direction:column;gap:8px}
-.app .hd{border-radius:10px;padding:8px 10px;color:#fff;font-weight:700;font-size:13px}
-.app i{display:block;height:9px;border-radius:5px;background:var(--line)}
-.app i:nth-child(3){width:72%}.app i:nth-child(4){width:88%}.app i:nth-child(5){width:55%}
-.go{margin-top:auto;text-align:center;background:var(--accent);color:#fff;text-decoration:none;border-radius:10px;padding:9px;font-weight:700;font-size:13px}
-.rs{position:absolute;right:0;bottom:0;width:32px;height:32px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 52%,var(--mute) 52%,var(--mute) 58%,transparent 58%,transparent 70%,var(--mute) 70%,var(--mute) 76%,transparent 76%)}
-#hint{position:absolute;left:16px;right:16px;bottom:calc(14px + env(safe-area-inset-bottom,0px));color:#e8ecf1;font-size:12px;opacity:.75;pointer-events:none}
-/* Annonce discrète des actions aux lecteurs d'écran (widgets ajoutés/fermés). */
-#live{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.bar button{font-size:15px;padding:2px 8px;color:var(--mute);border-radius:8px;line-height:1.2}
+.bar button:hover{background:var(--line)}
+.bar .plus{color:var(--accent);font-weight:700;font-size:17px}
+.bar .appcmd{font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:10px;padding:3px 8px;color:var(--ink);background:var(--tile)}
 
-/* --- Bandeau « Installer l'application » --------------------------------
-   Apparaît quand Chrome signale que le site est installable
-   (beforeinstallprompt). Imité de l'infobar native, mais déclenché par
-   notre propre bouton : sans interception, Chrome ne propose l'installation
-   que selon ses heuristiques de fréquentation. */
-#inst{background:rgba(255,255,255,.16);color:#e8ecf1;border-radius:16px;padding:7px 11px;font-size:13px}
-#installbar{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:6000;display:flex;align-items:center;gap:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:0 12px 34px rgba(0,0,0,.45)}
+/* Corps du widget : soit la grille d'applications, soit l'application elle-même */
+.body{flex:1;overflow:auto;padding:10px;touch-action:pan-y;-webkit-overflow-scrolling:touch;background:var(--tile)}
+.body iframe{width:100%;height:100%;border:0;display:block;background:#fff;border-radius:8px}
+.pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.pick button{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 4px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--ink)}
+.pick button:hover{border-color:var(--accent)}
+.pick b{font-size:22px;font-weight:400}
+.pick .vide{grid-column:1/-1;color:var(--mute);font-size:12px;text-align:center;padding:14px 6px}
+
+/* Barre de l'application ouverte dans le widget */
+.emb{display:flex;align-items:center;gap:6px;padding:5px 7px;border-bottom:1px solid var(--line);background:var(--panel)}
+.emb .n{flex:1;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.emb button,.emb a{font-size:14px;padding:2px 8px;color:var(--mute);border-radius:8px;text-decoration:none}
+.emb button:hover,.emb a:hover{background:var(--line)}
+
+/* Écran vide : tous les widgets retirés */
+#empty{margin:auto;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--mute);font-size:13px;text-align:center}
+#empty button{font-size:38px;color:var(--accent);font-weight:700;line-height:1}
+
+/* --- Panneau /app : les applications disponibles de tous les widgets --- */
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:7000;max-height:82%;overflow:auto;background:var(--panel);color:var(--ink);
+border-top-left-radius:20px;border-top-right-radius:20px;border:1px solid var(--line);box-shadow:0 -12px 34px rgba(0,0,0,.35);
+padding:12px 14px calc(14px + env(safe-area-inset-bottom,0px))}
+#sheet[hidden]{display:none}
+.sh-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sh-hd b{flex:1;font-size:14px}
+.sh-hd code{background:var(--tile);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12px}
+.row{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px dashed var(--line);font-size:13px}
+.row b{font-size:18px;font-weight:400}
+.row .rn{font-weight:700}
+.row .ru{flex:1;color:var(--mute);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row button{color:#c0392b;font-size:16px;padding:0 6px}
+#shf{display:grid;grid-template-columns:64px 1fr;gap:8px;margin-top:12px}
+#shf input{font:inherit;font-size:13px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--tile);color:var(--ink);min-width:0}
+#shf input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#shf .full{grid-column:1/-1}
+#shf button{grid-column:1/-1;background:var(--accent);color:#fff;border-radius:12px;padding:9px;font-weight:700;font-size:13px}
+.sh-ft{display:flex;align-items:center;gap:8px;margin-top:14px;color:var(--mute);font-size:12px}
+.sh-ft button{border:1px solid var(--line);border-radius:12px;padding:6px 12px;background:var(--tile)}
+
+/* --- Installation (invite « Installer l'application » de Chrome) --- */
+#inst{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:10px;z-index:6500;background:var(--accent);color:#fff;border-radius:16px;padding:7px 12px;font-weight:700;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,.3)}
+#installbar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:6600;display:flex;align-items:center;gap:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:0 12px 34px rgba(0,0,0,.45)}
 #installbar img{border-radius:10px;flex:none}
 #installbar .txt{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
 #installbar .txt b{font-size:13px}
@@ -71,108 +88,215 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #installbar .btns{display:flex;gap:6px;flex:none}
 #iby{background:var(--accent);color:#fff;border-radius:12px;padding:8px 12px;font-weight:700;font-size:12px}
 #ibn{border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:12px;color:var(--mute)}
+
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#live{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 </style>
 </head>
 <body>
-<div id="screen">
-  <div id="top"><span id="cnt" aria-live="polite"></span><button id="inst" type="button" hidden aria-label="Installer l'application">⤓</button><button id="theme" type="button">🌙</button><button id="new" type="button">+ Widget</button></div>
-  <div id="hint">Chaque widget ouvre une seule application. Glisse sa barre pour le déplacer, tire son coin pour le redimensionner. Au clavier : Alt + flèches pour déplacer, Alt + Maj + flèches pour redimensionner.</div>
-  <div id="installbar" hidden role="dialog" aria-labelledby="ibt">
-    <img src="icons/icon-192.png" alt="" width="44" height="44">
-    <div class="txt"><b id="ibt">Installer Multi-Widgets</b><span id="ibm">Icône sur l'écran d'accueil, lancement plein écran et mode hors ligne.</span></div>
-    <div class="btns"><button id="iby" type="button">Installer</button><button id="ibn" type="button">Plus tard</button></div>
-  </div>
-  <div id="live" role="status" aria-live="polite"></div>
+<div id="screen"></div>
+
+<div id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sht">
+  <div class="sh-hd"><code>/app</code><b id="sht">Applications disponibles</b><button id="shc" type="button" aria-label="Fermer le panneau">✕</button></div>
+  <div id="shl"></div>
+  <form id="shf">
+    <input id="f-g" maxlength="4" placeholder="" aria-label="Glyphe (facultatif)">
+    <input id="f-n" placeholder="Nom (ex. Deezer)" required aria-label="Nom de l'application">
+    <input id="f-u" class="full" placeholder="Adresse (ex. https://www.deezer.com)" required aria-label="Adresse de l'application">
+    <button type="submit">Ajouter à tous les widgets</button>
+  </form>
+  <div class="sh-ft"><button id="theme" type="button">🌙</button><span>Thème — sans choix, suit le système.</span></div>
 </div>
+
+<div id="installbar" hidden role="dialog" aria-labelledby="ibt">
+  <img src="icons/icon-192.png" alt="" width="44" height="44">
+  <div class="txt"><b id="ibt">Installer Multi-Widgets</b><span id="ibm">Vos widgets en une icône, un clic, et rien d'autre.</span></div>
+  <div class="btns"><button id="iby" type="button">Installer</button><button id="ibn" type="button">Plus tard</button></div>
+</div>
+<button id="inst" type="button" hidden>⤓ Installer</button>
+<div id="live" role="status" aria-live="polite"></div>
+
 <script>
-/* [nom, couleur, glyphe, url] — un seul tableau : les trois listes séparées
-   de la v1 pouvaient se désynchroniser silencieusement.
-   « Chrome » pointait vers une page marketing, pas vers une application
-   utilisable en ligne ; remplacé par X. */
-var APPS=[
-  ["WhatsApp","#1faa59","💬","https://web.whatsapp.com"],
-  ["X","#1d9bf0","🐦","https://x.com"],
-  ["Facebook","#1877f2","👥","https://m.facebook.com"],
-  ["Google","#ea4335","🔎","https://www.google.com"],
-  ["Instagram","#c13584","📷","https://www.instagram.com"],
-  ["YouTube","#e62117","▶","https://m.youtube.com"],
-  ["Gmail","#d93025","✉","https://mail.google.com"],
-  ["Maps","#0f9d58","📍","https://maps.google.com"],
-  ["Telegram","#229ed9","✈","https://web.telegram.org"],
-  ["TikTok","#222","♪","https://www.tiktok.com"]
-];
-var MAX=10,S=document.getElementById("screen"),NEW=document.getElementById("new"),THEME=document.getElementById("theme"),CNT=document.getElementById("cnt"),LIVE=document.getElementById("live"),list=[],uid=0;
-function count(){CNT.textContent=list.length+" widget"+(list.length>1?"s":"")+" sur "+MAX;NEW.disabled=list.length>=MAX}
+/* ========================================================================
+   Multi-Widgets — modèle « widget direct »
+   Un clic sur l'icône exécute le premier widget : l'application ne s'ouvre
+   pas au-dessus, l'écran EST le widget. Chaque widget porte déjà ses
+   applications ; un clic sur l'une l'ouvre DANS le widget. La commande
+   /app, présente sur chaque widget, ajoute des applications à tous.
+   ======================================================================== */
+
+/* Catalogue par défaut : les applications déjà accessibles partout. */
+function defaults(){return [
+  {g:"💬",n:"WhatsApp",u:"https://web.whatsapp.com"},
+  {g:"🐦",n:"X",u:"https://x.com"},
+  {g:"👥",n:"Facebook",u:"https://m.facebook.com"},
+  {g:"🔎",n:"Google",u:"https://www.google.com"},
+  {g:"📷",n:"Instagram",u:"https://www.instagram.com"},
+  {g:"▶",n:"YouTube",u:"https://m.youtube.com"},
+  {g:"✉",n:"Gmail",u:"https://mail.google.com"},
+  {g:"📍",n:"Maps",u:"https://maps.google.com"},
+  {g:"✈",n:"Telegram",u:"https://web.telegram.org"},
+  {g:"♪",n:"TikTok",u:"https://www.tiktok.com"}
+];}
+
+var KEY="multi-widgets.v2",KEY1="multi-widgets.v1",THEME_KEY="multi-widgets.theme",MAX=10;
+var SCREEN=document.getElementById("screen"),SHEET=document.getElementById("sheet"),SHL=document.getElementById("shl"),LIVE=document.getElementById("live");
+var state=null;
+
 function announce(m){LIVE.textContent=m}
-/* Amène la fenêtre au premier plan. Le compteur repart de 10 après chaque
-   restauration au lieu de croître indéfiniment pendant toute la session. */
-var z=10;
-function bump(el){el.style.zIndex=++z}
-function fill(w){
-  var b=w.el.querySelector(".body"),n=w.el.querySelector(".n"),sw=w.el.querySelector(".sw");
-  if(w.app===null){
-    n.textContent="Choisir une application";sw.style.display="none";
-    var h='<div class="pick">';APPS.forEach(function(a,i){h+='<button type="button" data-i="'+i+'"><b>'+a[2]+'</b>'+a[0]+'</button>'});
-    b.innerHTML=h+'</div>';
-  }else{
-    var a=APPS[w.app];n.textContent=a[2]+" "+a[0];sw.style.display="";
-    b.innerHTML='<div class="app"><div class="hd" style="background:'+a[1]+'">'+a[0]+'</div><i></i><i></i><i></i><a class="go" href="'+a[3]+'" target="_blank" rel="noopener">Ouvrir le site</a></div>';
-  }
-  save();
-}
-function geo(w){var s=w.el.style;s.left=w.x+"px";s.top=w.y+"px";s.width=w.w+"px";s.height=w.h+"px";save()}
-function clamp(w){
-  var sw=S.clientWidth,sh=S.clientHeight;
-  w.w=Math.max(150,Math.min(w.w,sw));w.h=Math.max(130,Math.min(w.h,sh-40));
-  w.x=Math.max(0,Math.min(w.x,sw-w.w));w.y=Math.max(40,Math.min(w.y,sh-w.h));
-}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 
 /* --- Persistance -------------------------------------------------------
-   La v1 ne sauvait rien : chaque rechargement effaçait les widgets, leurs
-   positions et leurs tailles. Tout est maintenant écrit dans localStorage.
-   Chaque accès est enveloppé dans try/catch : en navigation privée ou
-   quota dépassé, l'application doit continuer à fonctionner sans planter. */
-var KEY="multi-widgets.v1";
+   v2 : {widgets:[{app:null|index}], catalog:[{g,n,u}]}.
+   Migration depuis la v1 (tableau de positions) : on garde le nombre de
+   widgets et l'application choisie, dans le catalogue par défaut. */
 function save(){
-  try{
-    localStorage.setItem(KEY,JSON.stringify(list.map(function(w){
-      return {app:w.app,x:Math.round(w.x),y:Math.round(w.y),w:Math.round(w.w),h:Math.round(w.h)};
-    })));
-  }catch(e){}
+  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}
 }
 function load(){
   try{
     var d=JSON.parse(localStorage.getItem(KEY));
-    return Array.isArray(d)?d:null;
-  }catch(e){return null}
+    if(d&&Array.isArray(d.widgets)&&Array.isArray(d.catalog))return d;
+  }catch(e){}
+  try{
+    var v1=JSON.parse(localStorage.getItem(KEY1));
+    if(Array.isArray(v1)){
+      return {widgets:v1.slice(0,MAX).map(function(w){
+               return {app:(w&&typeof w.app==="number"&&w.app>=0&&w.app<10)?w.app:null};
+             }),catalog:defaults()};
+    }
+  }catch(e){}
+  return null;
 }
 
-/* --- Thème -------------------------------------------------------------
-   Le CSS de la v1 déclarait [data-theme] sans que rien ne le pose jamais :
-   deux règles mortes. La bascule existe maintenant, et son choix est
-   mémorisé. À défaut de choix, on suit le réglage système. */
-var THEME_KEY="multi-widgets.theme";
+/* --- Rendu ------------------------------------------------------------- */
+function widgetBar(i){
+  return '<div class="bar">'
+    +'<button class="minus" type="button" aria-label="Retirer ce widget">−</button>'
+    +'<span class="n"></span>'
+    +'<button class="appcmd" type="button" aria-label="Ajouter des applications à ce widget">/app</button>'
+    +'<button class="plus" type="button" aria-label="Ajouter un widget">+</button>'
+    +'</div>';
+}
+function paintWidget(w,el,i){
+  var n=el.querySelector(".n"),emb=el.querySelector(".emb"),body=el.querySelector(".body");
+  if(w.app===null||!state.catalog[w.app]){
+    n.textContent="Widget "+(i+1);
+    emb.hidden=true;
+    var h='<div class="pick">';
+    if(!state.catalog.length)h+='<div class="vide">Aucune application. Utilisez /app pour en ajouter.</div>';
+    state.catalog.forEach(function(a,k){
+      h+='<button type="button" data-i="'+k+'"><b>'+esc(a.g||"•")+'</b>'+esc(a.n)+'</button>';
+    });
+    body.innerHTML=h+'</div>';
+  }else{
+    var a=state.catalog[w.app];
+    n.textContent=a.g?a.g+" "+a.n:a.n;
+    emb.hidden=false;
+    emb.querySelector(".n").textContent=a.n;
+    emb.querySelector(".out").setAttribute("href",a.u);
+    /* L'application s'ouvre DANS le widget. Certains sites refusent d'être
+       encadrés (X-Frame-Options) : la flèche ↗ ouvre alors dans un onglet. */
+    body.innerHTML='<iframe src="'+esc(a.u)+'" title="'+esc(a.n)+'" loading="lazy" allow="fullscreen; clipboard-write; payment"></iframe>';
+  }
+}
+function render(){
+  SCREEN.innerHTML="";
+  if(!state.widgets.length){
+    var e=document.createElement("div");
+    e.id="empty";
+    e.innerHTML='<button type="button" aria-label="Ajouter un widget">+</button><span>Aucun widget.<br>Touchez + pour créer le premier.</span>';
+    e.querySelector("button").addEventListener("click",function(){addWidget();});
+    SCREEN.appendChild(e);
+    return;
+  }
+  state.widgets.forEach(function(w,i){
+    var el=document.createElement("section");
+    el.className="w";
+    el.setAttribute("aria-label","Widget "+(i+1));
+    el.innerHTML=widgetBar(i)
+      +'<div class="emb" hidden><button class="back" type="button" aria-label="Retour à la liste des applications">←</button><span class="n"></span><a class="out" target="_blank" rel="noopener" aria-label="Ouvrir dans un nouvel onglet">↗</a></div>'
+      +'<div class="body"></div>';
+    el.querySelector(".minus").addEventListener("click",function(){removeWidget(i)});
+    el.querySelector(".plus").addEventListener("click",function(){addWidget()});
+    el.querySelector(".appcmd").addEventListener("click",function(){openSheet()});
+    el.querySelector(".back").addEventListener("click",function(){w.app=null;save();paintWidget(w,el,i);announce("Retour à la liste des applications")});
+    el.querySelector(".body").addEventListener("click",function(ev){
+      var b=ev.target.closest("button[data-i]");
+      if(!b)return;
+      w.app=+b.getAttribute("data-i");save();paintWidget(w,el,i);
+      announce(state.catalog[w.app].n+" ouvert dans le widget "+(i+1));
+    });
+    paintWidget(w,el,i);
+    SCREEN.appendChild(el);
+  });
+}
+function addWidget(){
+  if(state.widgets.length>=MAX){announce("Maximum "+MAX+" widgets");return}
+  state.widgets.push({app:null});save();render();
+  announce("Widget ajouté : "+state.widgets.length);
+}
+function removeWidget(i){
+  state.widgets.splice(i,1);save();render();
+  announce("Widget retiré. Il en reste "+state.widgets.length);
+}
+
+/* --- Panneau /app -------------------------------------------------------
+   Présent sur chaque widget, il ajoute ou retire des applications
+   accessibles à l'affichage de TOUS les widgets. */
+function paintSheet(){
+  var h="";
+  state.catalog.forEach(function(a,k){
+    h+='<div class="row"><b>'+esc(a.g||"•")+'</b><span class="rn">'+esc(a.n)+'</span><span class="ru">'+esc(a.u)+'</span>'
+      +'<button type="button" data-del="'+k+'" aria-label="Retirer '+esc(a.n)+'">×</button></div>';
+  });
+  if(!state.catalog.length)h='<div class="row"><span class="ru">Aucune application pour l’instant.</span></div>';
+  SHL.innerHTML=h;
+}
+function openSheet(){
+  paintSheet();SHEET.hidden=false;
+  document.getElementById("shc").focus();
+  announce("Panneau /app ouvert : "+state.catalog.length+" applications");
+}
+document.getElementById("shc").addEventListener("click",function(){SHEET.hidden=true});
+SHL.addEventListener("click",function(ev){
+  var b=ev.target.closest("button[data-del]");
+  if(!b)return;
+  var k=+b.getAttribute("data-del"),name=state.catalog[k].n;
+  state.catalog.splice(k,1);
+  state.widgets.forEach(function(w){if(w.app===k)w.app=null;else if(w.app>k)w.app--});
+  save();paintSheet();render();
+  announce(name+" retiré de tous les widgets");
+});
+document.getElementById("shf").addEventListener("submit",function(ev){
+  ev.preventDefault();
+  var g=document.getElementById("f-g").value.trim();
+  var n=document.getElementById("f-n").value.trim();
+  var u=document.getElementById("f-u").value.trim();
+  if(!n||!u)return;
+  if(!/^https?:\/\//i.test(u))u="https://"+u;   /* tolère « deezer.com » */
+  state.catalog.push({g:g,n:n,u:u});
+  save();paintSheet();render();
+  document.getElementById("f-g").value="";document.getElementById("f-n").value="";document.getElementById("f-u").value="";
+  announce(n+" ajouté à tous les widgets");
+});
+
+/* --- Thème ------------------------------------------------------------- */
+var THEME=document.getElementById("theme");
 function readTheme(){try{return localStorage.getItem(THEME_KEY)}catch(e){return null}}
 function paintTheme(){
   var t=readTheme();
   var dark=t==="dark"||(!t&&window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches);
-  THEME.textContent=dark?"☀️":"🌙";
-  THEME.setAttribute("aria-label",dark?"Passer au thème clair":"Passer au thème sombre");
+  THEME.textContent=dark?"☀️ Clair":"🌙 Sombre";
   THEME.setAttribute("aria-pressed",dark?"true":"false");
 }
-function setTheme(t){
-  try{t?localStorage.setItem(THEME_KEY,t):localStorage.removeItem(THEME_KEY)}catch(e){}
-  if(t)document.documentElement.setAttribute("data-theme",t);
-  else document.documentElement.removeAttribute("data-theme");
-  paintTheme();
-}
 THEME.addEventListener("click",function(){
-  var cur=document.documentElement.getAttribute("data-theme");
-  var dark;
+  var cur=document.documentElement.getAttribute("data-theme"),dark;
   if(cur)dark=cur!=="dark";
   else dark=!(window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches);
-  setTheme(dark?"dark":"light");
-  announce(dark?"Thème sombre activé":"Thème clair activé");
+  try{localStorage.setItem(THEME_KEY,dark?"dark":"light")}catch(e){}
+  document.documentElement.setAttribute("data-theme",dark?"dark":"light");
+  paintTheme();announce(dark?"Thème sombre":"Thème clair");
 });
 if(readTheme())document.documentElement.setAttribute("data-theme",readTheme());
 paintTheme();
@@ -180,50 +304,11 @@ if(window.matchMedia)try{
   window.matchMedia("(prefers-color-scheme:dark)").addEventListener("change",function(){if(!readTheme())paintTheme()});
 }catch(e){}
 
-/* --- Glisser / redimensionner ------------------------------------------ */
-function drag(el,w,fn){
-  el.addEventListener("pointerdown",function(e){
-    if(e.target.closest("button"))return;
-    e.preventDefault();el.setPointerCapture(e.pointerId);
-    var sx=e.clientX,sy=e.clientY,o={x:w.x,y:w.y,w:w.w,h:w.h};
-    function mv(ev){fn(o,ev.clientX-sx,ev.clientY-sy);clamp(w);geo(w)}
-    /* up() ne se retirait pas lui-même : le pointercancel laissait un
-       écouteur orphelin à chaque geste interrompu. */
-    function up(){el.removeEventListener("pointermove",mv);el.removeEventListener("pointerup",up);el.removeEventListener("pointercancel",up)}
-    el.addEventListener("pointermove",mv);el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);
-  });
-}
-
-/* --- Clavier -----------------------------------------------------------
-   La v1 comptait 0 gestionnaire keydown, 0 tabindex et 0 role : déplacer ou
-   redimensionner un widget était impossible sans souris ni doigt.
-   Alt + flèches = déplacer ; Alt + Maj + flèches = redimensionner. */
-function keys(w){
-  return function(e){
-    if(!e.altKey||e.ctrlKey||e.metaKey)return;
-    var dx=0,dy=0;
-    if(e.key==="ArrowLeft")dx=-1;
-    else if(e.key==="ArrowRight")dx=1;
-    else if(e.key==="ArrowUp")dy=-1;
-    else if(e.key==="ArrowDown")dy=1;
-    else return;
-    e.preventDefault();
-    var step=e.shiftKey?40:8;
-    if(e.shiftKey){w.w+=dx*step;w.h+=dy*step}
-    else{w.x+=dx*step;w.y+=dy*step}
-    clamp(w);geo(w);
-    announce(e.shiftKey
-      ? "Redimensionné : "+Math.round(w.w)+" sur "+Math.round(w.h)+" pixels"
-      : "Déplacé à "+Math.round(w.x)+" et "+Math.round(w.y));
-  };
-}
 /* --- Installation -------------------------------------------------------
-   Chrome émet beforeinstallprompt dès que le site respecte ses critères
-   (HTTPS, manifeste complet, service worker actif). On l'intercepte pour
-   afficher notre propre invitation : sans cela, l'infobar native ne sort
-   que selon des heuristiques de fréquentation propres au navigateur.
-   Le bouton ⤓ de la barre du haut reste disponible ensuite pour relancer
-   l'installation à tout moment. */
+   Chrome émet beforeinstallprompt quand le site respecte ses critères
+   (HTTPS, manifeste, service worker). On l'intercepte : notre bandeau
+   propose l'installation, et l'icône installée exécute directement le
+   premier widget au prochain clic. */
 var IB=document.getElementById("installbar"),IBY=document.getElementById("iby"),IBN=document.getElementById("ibn"),INST=document.getElementById("inst"),deferredPrompt=null,installSeen=false;
 function isInstalled(){
   return (window.matchMedia&&(window.matchMedia("(display-mode: standalone)").matches||window.matchMedia("(display-mode: fullscreen)").matches))
@@ -234,109 +319,39 @@ function refreshInstallUI(){
   if(isInstalled())IB.hidden=true;
 }
 function askInstall(){
-  if(!deferredPrompt){
-    /* L'invite a déjà été consommée ou le navigateur ne l'expose pas :
-       on indique la voie native plutôt que de laisser un bouton mort. */
-    announce("Menu ⋮ de Chrome puis « Installer l'application ».");
-    return;
-  }
-  var p=deferredPrompt;
-  deferredPrompt=null;
+  if(!deferredPrompt){announce("Menu ⋮ de Chrome puis « Installer l'application ».");return}
+  var p=deferredPrompt;deferredPrompt=null;
   p.prompt();
-  p.userChoice.then(function(choice){
-    if(choice.outcome==="accepted"){
-      announce("Installation acceptée");
-      IB.hidden=true;
-    }else{
-      announce("Installation reportée : bouton ⤓ disponible en haut");
-      IB.hidden=true;           /* le ⤓ reste, lui, pour retenter plus tard */
-    }
-    refreshInstallUI();
+  p.userChoice.then(function(c){
+    announce(c.outcome==="accepted"?"Installation acceptée":"Installation reportée");
+    IB.hidden=true;refreshInstallUI();
   });
 }
 window.addEventListener("beforeinstallprompt",function(e){
-  e.preventDefault();            /* coupe l'infobar native : c'est nous qui la déclenchons */
-  deferredPrompt=e;installSeen=true;
+  e.preventDefault();deferredPrompt=e;installSeen=true;
   if(!isInstalled())IB.hidden=false;
-  refreshInstallUI();
-  announce("Application prête à être installée");
+  refreshInstallUI();announce("Application prête à être installée");
 });
 window.addEventListener("appinstalled",function(){
-  deferredPrompt=null;installSeen=false;
-  IB.hidden=true;refreshInstallUI();
+  deferredPrompt=null;installSeen=false;IB.hidden=true;refreshInstallUI();
   announce("Application installée sur l'appareil");
 });
 IBY.addEventListener("click",askInstall);
 INST.addEventListener("click",askInstall);
-IBN.addEventListener("click",function(){IB.hidden=true;announce("Installation reportée : bouton ⤓ disponible en haut")});
-/* iOS/Safari ne connaissent pas beforeinstallprompt : on explique alors la
-   marche à suivre manuelle au lieu de promettre un bouton qui ne viendra pas. */
+IBN.addEventListener("click",function(){IB.hidden=true;announce("Installation reportée")});
 if(!isInstalled()&&!("onbeforeinstallprompt" in window)&&/iPhone|iPad|iPod/.test(navigator.userAgent)){
   document.getElementById("ibm").textContent="Sur iPhone ou iPad : bouton Partager, puis « Sur l'écran d'accueil ».";
   IBY.hidden=true;IBN.textContent="Fermer";IB.hidden=false;
 }
 if(isInstalled()){IB.hidden=true;INST.hidden=true}
 
-function add(app,box){
-  if(list.length>=MAX)return null;
-  var k=list.length,sw=S.clientWidth,el=document.createElement("div");
-  el.className="w";
-  el.setAttribute("role","group");
-  el.setAttribute("tabindex","0");
-  el.setAttribute("aria-labelledby","wt"+uid);
-  /* role + tabindex : la poignée était un <div aria-label="…">, et un
-     aria-label sur un <div> sans rôle n'est simplement pas annoncé par les
-     lecteurs d'écran. En separator focusable, elle l'est et elle se pilote
-     au clavier. */
-  el.innerHTML='<div class="bar"><span class="n" id="wt'+uid+'"></span>'
-    +'<button class="sw" type="button" aria-label="Changer d’application">⇄</button>'
-    +'<button class="cl" type="button" aria-label="Fermer le widget">✕</button></div>'
-    +'<div class="body"></div>'
-    +'<div class="rs" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Redimensionner le widget"></div>';
-  var w={id:uid++,el:el,app:app,
-         x:box?box.x:12+(k%6)*22,
-         y:box?box.y:52+(k%6)*30,
-         w:box?box.w:Math.min(300,sw-24),
-         h:box?box.h:230};
-  clamp(w);S.appendChild(el);list.push(w);geo(w);fill(w);count();
-  el.addEventListener("pointerdown",function(){bump(el)},true);
-  el.addEventListener("focusin",function(){bump(el)});
-  el.addEventListener("keydown",keys(w));
-  el.querySelector(".cl").addEventListener("click",function(){
-    var name=el.querySelector(".n").textContent;
-    el.remove();list=list.filter(function(v){return v!==w});count();save();
-    announce("Widget fermé : "+name);
-  });
-  el.querySelector(".sw").addEventListener("click",function(){w.app=null;fill(w)});
-  el.querySelector(".body").addEventListener("click",function(e){
-    var b=e.target.closest("button[data-i]");
-    if(b){w.app=+b.getAttribute("data-i");fill(w);announce(APPS[w.app][0]+" ouvert dans le widget")}
-  });
-  drag(el.querySelector(".bar"),w,function(o,dx,dy){w.x=o.x+dx;w.y=o.y+dy});
-  drag(el.querySelector(".rs"),w,function(o,dx,dy){w.w=o.w+dx;w.h=o.h+dy});
-  return w;
-}
-NEW.addEventListener("click",function(){if(add(null))announce("Widget ajouté")});
-window.addEventListener("resize",function(){list.forEach(function(w){clamp(w);geo(w)})});
-
-/* --- Démarrage ---------------------------------------------------------
-   Restaure la disposition sauvegardée au lieu de repartir d'un écran vide.
-   Une entrée illisible (app hors limites, valeurs non numériques) est
-   écartée sans interrompre la restauration du reste. */
-function restore(){
-  var d=load(),n=0;
-  if(d)d.forEach(function(b){
-    if(n>=MAX)return;
-    var ok=b&&typeof b==="object"
-      &&(b.app===null||(typeof b.app==="number"&&b.app>=0&&b.app<APPS.length))
-      &&["x","y","w","h"].every(function(k){return typeof b[k]==="number"&&isFinite(b[k])});
-    if(ok&&add(b.app===null?null:b.app,b))n++;
-  });
-  if(!n)add(null);
-  /* Le compteur de plans repart d'ici plutôt que de continuer à croître. */
-  z=10+list.length;list.forEach(function(w){w.el.style.zIndex=++z});
-}
-restore();
+/* --- Démarrage : exécute le premier widget, rien d'autre ----------------
+   Premier lancement (rien de sauvegardé) : un widget est créé.
+   L'utilisateur a retiré tous ses widgets : l'écran vide avec + est
+   respecté, tel quel. */
+state=load();
+if(!state)state={widgets:[{app:null}],catalog:defaults()};
+render();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
 </script>
 </body>

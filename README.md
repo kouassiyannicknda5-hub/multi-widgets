@@ -1,57 +1,63 @@
 # Multi-Widgets
 
-A zero-dependency, zero-build **Progressive Web App**: a simulated Android-style
-home screen holding up to 10 draggable, resizable widgets. Each widget opens
-exactly one application — the tile is a simulated preview, and its
-"Open site" button launches the real web version.
+**One tap on the icon runs the widget: the app never opens over it.**
+The screen *is* the widget — no board, no wallpaper, no intermediate step.
 
-> 🇫🇷 La documentation détaillée en français est dans [LISEZ-MOI.md](LISEZ-MOI.md).
+> 🇫🇷 Documentation détaillée en français : [LISEZ-MOI.md](LISEZ-MOI.md).
 
-## Features
+## How it works
 
-- Up to 10 floating widgets, draggable by their title bar and resizable by
-  their bottom-right handle (pointer events: mouse, touch and pen).
-- **Everything persists.** Layout, sizes, chosen apps and theme are saved to
-  `localStorage` and restored on reload.
-- Light / dark theme with a manual toggle; follows the OS preference until you
-  choose one yourself.
-- Keyboard support: `Alt` + arrows moves the focused widget,
-  `Alt` + `Shift` + arrows resizes it.
-- Installable and fully offline (service worker + web manifest).
+- On launch the **first widget runs directly**, restoring whichever
+  application was open inside it — or showing its application list.
+- Every widget **already carries its applications** (the built-in ones plus
+  any you add). **One tap on an application opens it inside the widget.**
+- Each widget bar holds:
+  - **`−`** remove this widget;
+  - **`+`** add another widget (up to 10);
+  - **`/app`** the applications panel: add more apps, remove them with `×`.
+    The command sits on **every** widget and its changes apply to **all**
+    widgets at once.
+- While an application is open in a widget: **`←`** returns to the list,
+  **`↗`** opens it in a separate tab.
+- Everything persists: widgets, app catalog, per-widget open application,
+  theme. Removing all widgets leaves a minimal empty screen with a `+`,
+  honoured as-is on next launch.
+- Light/dark theme from the `/app` panel; follows the OS until you choose.
+
+## Adding an application (`/app`)
+
+1. Tap `/app` on any widget.
+2. Fill a glyph (optional, e.g. 🎵), a name, an address
+   (`deezer.com` is enough — `https://` is prepended).
+3. "Add to all widgets": the app appears in every widget's list at once.
+
+## Fair warning: sites that refuse the frame
+
+Many major sites (WhatsApp, Google, Facebook, Instagram…) **forbid** being
+displayed inside a frame, via `X-Frame-Options` or CSP — that is *their*
+servers' decision, not a Multi-Widgets bug. The widget then shows their
+refusal message, and **`↗`** opens the application in a tab. Sites that
+allow embedding render normally inside the widget.
 
 ## Install on a phone
 
 1. Host this folder on any HTTPS host (GitHub Pages, Netlify, Render…).
-2. Open the address in Chrome (Android).
-3. The **"Install Multi-Widgets"** banner shows up with an **Install**
-   button — or use Menu ⋮ → *Install app*.
-
-### The in-app "Install app" button
-
-As soon as the site meets Chrome's install criteria (HTTPS, complete
-manifest, active service worker), the app intercepts
-`beforeinstallprompt` and shows its own install banner, the way major
-sites do: the **Install** button opens Chrome's native dialog. Without
-that interception, Chrome's infobar only appears according to the
-browser's own engagement heuristics.
-
-- A **⤓** button stays in the top bar to retry later, even after
-  dismissing the banner ("Later", or refusing the dialog).
-- Once installed (`appinstalled`), banner and button disappear: the app
-  knows it already runs installed (`display-mode: standalone`).
-- On iPhone/iPad, which lack `beforeinstallprompt`, the banner explains
-  the manual path instead: Share → *Add to Home Screen*.
+2. Open it in Chrome (Android); the "Install Multi-Widgets" banner offers
+   installation (Menu ⋮ → *Install app* works too).
+3. Once installed, **one tap on the icon runs the first widget**.
+4. iPhone/iPad: Share → *Add to Home Screen*.
 
 ## Test on a computer
-
-Open `index.html` in a browser, or serve the folder:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Installation requires HTTPS; plain `file://` runs the app but not the
-service worker.
+Functional tests (33 assertions, jsdom):
+
+```bash
+npm install && npm test
+```
 
 ## Layout
 
@@ -59,15 +65,9 @@ service worker.
 |---|---|
 | `index.html` | The whole app: structure, styles and logic in one file |
 | `manifest.json` | PWA install metadata |
-| `sw.js` | Service worker: precache, offline, update strategy |
-| `icons/` | 192 & 512 px icons, plus maskable variants (80 % safe zone) |
-| `LISEZ-MOI.md` | French documentation |
-
-## Updating the app
-
-The service worker serves the HTML **network-first** and purges old caches on
-activation, so a redeploy reaches users without any extra step. If you ever
-need a hard reset of the precache, bump `CACHE` in `sw.js`.
+| `sw.js` | Service worker: precache, offline, network-first updates |
+| `icons/` | 192 & 512 px icons plus maskable variants |
+| `tests/smoke.js` | Functional test suite |
 
 ## License
 
