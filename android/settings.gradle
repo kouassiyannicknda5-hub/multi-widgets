@@ -12,4 +12,8 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "multi-widgets"
+
 include ':app'
+include ':core'
+include ':multitasking'
+include ':ai'

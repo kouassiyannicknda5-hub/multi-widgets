@@ -1,17 +1,19 @@
 plugins {
     id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.compose'
 }
 
 android {
     namespace 'app.multiwidgets'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "app.multiwidgets"
-        minSdk 24
-        targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        minSdk 26
+        targetSdk 35
+        versionCode 2
+        versionName "2.0"
     }
 
     buildTypes {
@@ -24,9 +26,29 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    buildFeatures {
+        compose true
+    }
 }
 
-/* Aucune dépendance externe : AppWidgetProvider, RemoteViews et org.json
-   font partie du framework Android lui-même. */
 dependencies {
+    implementation project(':core')
+    implementation project(':multitasking')
+    implementation project(':ai')
+
+    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'androidx.activity:activity-compose:1.9.3'
+    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.7'
+    implementation 'androidx.navigation:navigation-compose:2.8.4'
+
+    implementation platform('androidx.compose:compose-bom:2024.10.01')
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.compose.material:material-icons-extended'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+
+    testImplementation 'junit:junit:4.13.2'
 }
