@@ -1,36 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Superpositions : barre latérale, sous-titres, fenêtres de traduction.
+         Demandées à l'exécution, avec explication, jamais implicites. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".MultiWidgetsApp"
         android:icon="@mipmap/ic_launcher"
-        android:label="Multi-Widgets"
-        android:theme="@android:style/Theme.DeviceDefault.Light">
+        android:label="Multi-widgets"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar"
+        android:allowBackup="false">
 
-        <!-- Écran de réglage du widget (équivalent natif de /app).
-             Une fois le widget posé sur l'écran d'accueil, il n'est plus
-             nécessaire d'ouvrir cette activité : le widget vit seul. -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Le widget d'écran d'accueil lui-même : dessiné par le lanceur,
-             en dehors de toute application ouverte. -->
-        <receiver
-            android:name=".Widgets"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_info" />
-        </receiver>
+        <!-- Capture d'écran : service au premier plan de type mediaProjection,
+             démarré UNIQUEMENT après consentement système (Android 14+). -->
+        <service
+            android:name="app.multiwidgets.ai.capture.ScreenCaptureService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
+        <!-- Sous-titres et traduction flottants -->
+        <service
+            android:name="app.multiwidgets.ai.subtitles.SubtitleOverlayService"
+            android:exported="false" />
 
     </application>
-
 </manifest>

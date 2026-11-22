@@ -28,19 +28,19 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # Gradle 8.7 fixe : compatible avec AGP 8.5 et JDK 17, quel que soit
+      # Gradle 8.9 fixe : compatible avec AGP 8.7.3 et JDK 17, quel que soit
       # le Gradle préinstallé sur le runner.
-      - name: Installer Gradle 8.7
+      - name: Installer Gradle 8.9
         run: |
-          curl -sL -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          curl -sL -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
           unzip -q /tmp/gradle.zip -d /opt
-          echo "/opt/gradle-8.7/bin" >> "$GITHUB_PATH"
+          echo "/opt/gradle-8.9/bin" >> "$GITHUB_PATH"
 
-      - name: Construire app-debug.apk
+      - name: Construire app-debug.apk et tester
         run: |
           set -o pipefail
           cd android
-          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/gradle.log
+          gradle assembleDebug testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee /tmp/gradle.log
 
       # Les journaux Actions ne sont pas téléchargeables depuis le sandbox de
       # développement : en cas d'échec, on publie la fin du journal Gradle en
@@ -53,7 +53,9 @@ jobs:
           {
             echo "Échec du build APK — exécution ${{ github.run_id }} :"
             echo '```'
-            tail -n 100 /tmp/gradle.log || echo "(journal introuvable)"
+            grep -E "^e: |error:|FAILURE:|What went wrong:|^> Task .* FAILED|Caused by:" /tmp/gradle.log | head -n 60 || true
+            echo "--- fin du journal ---"
+            tail -n 30 /tmp/gradle.log || echo "(journal introuvable)"
             echo '```'
           } > /tmp/tail.md
           gh issue comment 4 --body-file /tmp/tail.md

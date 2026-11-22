@@ -94,3 +94,24 @@ native companion doing exactly what the Web cannot:
 ### Place the widget
 Long-press the home screen → **Widgets** → "Multi-Widgets" → drag it out.
 Done: cells launch sites with one tap, without opening any app.
+
+## Full Android app (v2): Multi-widgets — AI Multitasking & Universal Translator
+
+`android/` is now a real multi-module Android project (Kotlin, Jetpack
+Compose, Material 3, SDK 35) with three engines:
+
+1. **Multi-widgets Engine** — floating sidebar, native layouts (1/2/3/4/6
+   zones, gated by real firmware capabilities), app launcher, home-screen
+   widget;
+2. **AI Translation Engine** — ML Kit OCR (latin, Chinese, Japanese, Korean,
+   Devanagari), language ID, offline translation with on-demand models,
+   swappable cloud provider;
+3. **AI Voice Engine** — speech recognition, floating translated subtitles,
+   segmented TTS dubbing; Whisper stays locked behind an honesty gate until
+   a real-device benchmark passes.
+
+The AI Processing Router picks local/cloud/eco/fallback from real
+capabilities, connectivity, thermal state, memory and privacy preferences.
+
+Full documentation in `docs/`: BUILD.md, INSTALL.md, API-CONFIG.md,
+FEATURE_REPORT.md (finished vs unfinished, nothing promised unverified).

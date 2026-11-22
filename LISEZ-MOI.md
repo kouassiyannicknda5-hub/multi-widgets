@@ -84,3 +84,25 @@ ne peut pas faire :
 Appui long sur l'écran d'accueil → **Widgets** → « Multi-Widgets » → glisser
 sur l'écran. C'est fini : les cases lancent les sites d'un toucher, sans
 ouvrir aucune application.
+
+## Application Android complète (v2) : Multi-widgets — AI Multitasking & Universal Translator
+Le dossier `android/` est désormais un véritable projet Android multi-modules
+(Kotlin, Jetpack Compose, Material 3, SDK 35) réunissant trois moteurs :
+
+1. **Multi-widgets Engine** — barre latérale flottante, dispositions natives
+   (1, 2, 3, 4, 6 zones selon le firmware), lanceur d'applications, widget
+   d'écran d'accueil ;
+2. **AI Translation Engine** — OCR ML Kit (latin, chinois, japonais, coréen,
+   devanagari), détection de langue, traduction hors ligne à modèles
+   téléchargés à la demande, fournisseur cloud interchangeable ;
+3. **AI Voice Engine** — reconnaissance vocale, sous-titres traduits flottants,
+   doublage TTS segmenté ; verrou d'honnêteté Whisper tant que le benchmark
+   réel n'est pas passé.
+
+Le routeur de traitement choisit local/cloud/éco/secours selon les capacités
+réelles, la connexion, la thermique, la mémoire et vos préférences de
+confidentialité.
+
+Documentation complète dans `docs/` : BUILD.md, INSTALL.md, API-CONFIG.md,
+FEATURE_REPORT.md (fonctions terminées et non terminées, sans rien promettre
+non vérifié).
