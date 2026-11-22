@@ -146,7 +146,6 @@ section.on{display:block}
 #dock{position:fixed;left:8px;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:8px 6px;backdrop-filter:blur(8px)}
 #dock[hidden]{display:none}
 #dock button{width:40px;height:40px;border-radius:50%;background:var(--card2);border:1px solid var(--line);font-size:18px;display:flex;align-items:center;justify-content:center}
-#dockhandle{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:51;background:var(--card2);border:1px solid var(--line);border-left:0;border-radius:0 12px 12px 0;padding:10px 4px;color:var(--mute)}
 #dockmenu{position:fixed;left:60px;top:50%;transform:translateY(-50%);z-index:52;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;backdrop-filter:blur(10px);min-width:190px}
 #dockmenu[hidden]{display:none}
 #dockmenu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border-radius:12px;font-size:13px}
@@ -294,7 +293,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       <div class="rows">
         <div class="prow" id="p-install"><span class="ic" style="background:var(--tile2)">⤓</span><span class="tx"><b>Installer l'application</b><span>Icône sur l'écran d'accueil, plein écran</span></span><span class="ch">›</span></div>
         <div class="prow" id="p-apps"><span class="ic" style="background:var(--tile1)">▦</span><span class="tx"><b>Toutes les applications</b><span>Ajouter, retirer, régler les fournisseurs</span></span><span class="ch">›</span></div>
-        <div class="prow" id="p-dock"><span class="ic" style="background:var(--tile3)">☰</span><span class="tx"><b>Barre latérale</b><span>Afficher ou masquer le dock flottant</span></span><button class="sw on" id="sw-dock" role="switch" aria-label="Barre latérale"></button></div>
+        <div class="prow"><span class="ic" style="background:var(--tile3)">☰</span><span class="tx"><b>Barre latérale</b><span>Toujours visible — elle ne se masque jamais</span></span><span class="ch">✓</span></div>
         <div class="prow"><span class="ic" style="background:var(--tile4)">ℹ</span><span class="tx"><b>À propos</b><span>multi-widgets 3.0 — moteurs : traduction cloud, Web Speech API, synthèse vocale. Limites assumées : pas de modèles hors ligne ni de capture d'écran dans un navigateur (voir l'APK Android).</span></span></div>
       </div>
     </section>
@@ -307,7 +306,6 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   </nav>
 </div>
 
-<button id="dockhandle" aria-label="Afficher ou masquer la barre latérale">›</button>
 <aside id="dock" aria-label="Barre latérale flottante"></aside>
 <div id="dockmenu" hidden>
   <button data-act="apps">▦ Toutes les apps</button>
@@ -315,7 +313,6 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   <button data-act="trad">🌐 Traduction d'écran</button>
   <button data-act="hist">🕘 Historique</button>
   <button data-act="param">⚙ Paramètres</button>
-  <button data-act="hide"> Masquer la barre</button>
 </div>
 
 <div id="subsbar" hidden><div class="s" id="sb-s"></div><div class="t" id="sb-t"></div></div>
@@ -593,14 +590,9 @@ DMENU.addEventListener("click",function(ev){
   var b=ev.target.closest("button[data-act]");if(!b)return;
   var act=b.getAttribute("data-act");
   if(act==="apps")openSheet();
-  else if(act==="hide"){DOCK.hidden=true;trSet("dock","0");syncDockSw();announce("Barre latérale masquée")}
   else view(act);
   DMENU.hidden=true;
 });
-document.getElementById("dockhandle").addEventListener("click",function(){
-  DOCK.hidden=!DOCK.hidden;trSet("dock",DOCK.hidden?"0":"1");syncDockSw();
-});
-function syncDockSw(){document.getElementById("sw-dock").classList.toggle("on",!DOCK.hidden)}
 
 /* --- vue voix : assistant, sous-titres, doublage --- */
 var spoken=[],spkIdx=-1,SRg=window.SpeechRecognition||window.webkitSpeechRecognition,recG=null;
@@ -729,8 +721,6 @@ applyTheme(trGet("dark","1")==="1"?"dark":"light");
 /* --- plus --- */
 document.getElementById("p-apps").addEventListener("click",openSheet);
 document.getElementById("p-install").addEventListener("click",askInstall);
-swBind("sw-dock","dock",function(on){DOCK.hidden=!on});
-syncDockSw();
 document.getElementById("hclear").addEventListener("click",function(){
   try{localStorage.removeItem("mw.hist")}catch(e){}
   paintHist();announce("Historique supprimé");
@@ -802,7 +792,8 @@ if(isInstalled()){IB.hidden=true;INST.hidden=true}
 /* --- démarrage --- */
 state=load()||{windows:[{app:null,min:false}],catalog:defaults()};
 if(!state.windows.length)state.windows.push({app:null,min:false});
-DOCK.hidden=trGet("dock","1")!=="1";
+DOCK.hidden=false;   // barre latérale permanente : toujours visible, jamais masquée
+try{localStorage.removeItem("mw.tr.dock")}catch(e){}   // purge tout ancien état « masquée »
 renderWindows();paintDock();paintVoice();paintHist();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
 </script>

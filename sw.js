@@ -20,7 +20,7 @@
 
 /* Incrémenter cette version à chaque modification des fichiers précachés
  * suffit à faire purger les anciens caches par le gestionnaire « activate ». */
-var CACHE = "multi-widgets-v3";
+var CACHE = "multi-widgets-v4";
 
 /* « ./ » et « index.html » désignent le même document : ne garder que « ./ »
  * évite de stocker le HTML deux fois. */

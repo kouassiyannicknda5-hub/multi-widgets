@@ -5,7 +5,8 @@
  * Vérifie le visuel officiel recréé : tableau de bord 4 tuiles + navigation
  * basse, dock latéral + menu, 4 fenêtres simultanées, traduction, voix &
  * sous-titres & doublage, paramètres avancés, historique, /app, installation.
- * 44 assertions. */
+ * La barre latérale (dock) est permanente : jamais masquable, toujours visible.
+ * 47 assertions. */
 const { JSDOM } = require("jsdom");
 const fs = require("fs");
 const path = require("path");
@@ -74,7 +75,10 @@ function boot(storage) {
   check("dock : 6 icônes d'apps + menu ⋯", document.querySelectorAll("#dock button").length === 7);
   click(window, document.querySelector("#dock button:last-child"));
   await wait(20);
-  check("le menu s'ouvre avec 6 entrées", document.querySelectorAll("#dockmenu button").length === 6);
+  check("le menu s'ouvre avec 5 entrées (sans « Masquer la barre »)", document.querySelectorAll("#dockmenu button").length === 5);
+  check("aucune poignée pour masquer la barre", document.getElementById("dockhandle") === null);
+  check("aucune entrée « Masquer la barre » dans le menu", document.querySelector('#dockmenu button[data-act="hide"]') === null);
+  check("barre latérale visible au démarrage", document.getElementById("dock").hidden === false);
   click(window, document.querySelector('#dockmenu button[data-act="param"]'));
   await wait(20);
   check("le menu navigue vers Paramètres", document.getElementById("v-param").classList.contains("on"));
@@ -163,12 +167,12 @@ function boot(storage) {
 
   console.log("— Persistance & relancement —");
   const saved = window.localStorage.getItem("multi-widgets.v3");
-  const dom2 = boot({ "multi-widgets.v3": saved, "mw.tr.dark": "1" });
+  const dom2 = boot({ "multi-widgets.v3": saved, "mw.tr.dark": "1", "mw.tr.dock": "0" });
   const d2 = dom2.window.document;
   await wait(150);
   check("fenêtres restaurées au relancement", d2.querySelectorAll("#wingrid .win").length === 1);
   check("thème sombre restauré", d2.documentElement.getAttribute("data-theme") === "dark");
-  check("dock restauré visible", d2.getElementById("dock").hidden === false);
+  check("barre latérale toujours visible même si un ancien réglage la masquait", d2.getElementById("dock").hidden === false);
 
   console.log("");
   console.log(failed === 0 ? "TOUS LES TESTS PASSENT ✔" : failed + " TEST(S) EN ÉCHEC ✘");
