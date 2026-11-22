@@ -27,15 +27,23 @@ class TtsEngine(private val context: Context) {
 
     /** Genres réellement fournis par le moteur installé : féminin, masculin, neutre, ou un sous-ensemble. */
     fun genres(): List<String> {
-        val voices = tts?.voices ?: return emptyList()
-        val tags = voices.flatMap { it.tags ?: emptySet() }.map { it.lowercase() }.toSet()
-        val noms = voices.map { it.name.lowercase() }
+        val noms: List<String> = nomsVoix()
         val out = mutableListOf<String>()
-        if (tags.any { it.contains("female") } || noms.any { it.contains("female") || it.contains("femme") }) out += "feminin"
-        if (tags.any { it.contains("male") } || noms.any { it.contains("male") || it.contains("homme") }) out += "masculin"
+        if (noms.any { marqueurFeminin(it) }) out += "feminin"
+        if (noms.any { marqueurMasculin(it) }) out += "masculin"
         out += "neutre"   // toute voix sans marqueur de genre est neutre
         return out
     }
+
+    private fun nomsVoix(): List<String> =
+        runCatching { tts?.getVoices()?.map { v -> v.getName().lowercase() } ?: emptyList() }
+            .getOrDefault(emptyList())
+
+    private fun marqueurFeminin(n: String) =
+        n.contains("female") || n.contains("femme") || n.contains("woman") || n.contains("-f-")
+
+    private fun marqueurMasculin(n: String) =
+        n.contains("male") || n.contains("homme") || n.contains("man") || n.contains("-m-")
 
     fun langues(): List<Locale> = tts?.availableLanguages?.toList() ?: emptyList()
 
@@ -43,13 +51,13 @@ class TtsEngine(private val context: Context) {
         val t = tts ?: return
         t.language = langue
         t.setSpeechRate(vitesse.coerceIn(0.5f, 2f))
-        val voices: Set<Voice> = t.voices ?: emptySet()
-        val choisi = when (genre) {
-            "feminin" -> voices.firstOrNull { it.tags?.any { x -> x.contains("female", true) } == true }
-            "masculin" -> voices.firstOrNull { it.tags?.any { x -> x.contains("male", true) } == true }
+        val voices: Set<Voice> = runCatching { t.getVoices() ?: emptySet() }.getOrDefault(emptySet())
+        val choisi: Voice? = when (genre) {
+            "feminin" -> voices.firstOrNull { marqueurFeminin(it.getName().lowercase()) }
+            "masculin" -> voices.firstOrNull { marqueurMasculin(it.getName().lowercase()) }
             else -> null
         }
-        if (choisi != null) runCatching { t.voice = choisi }
+        if (choisi != null) runCatching { t.setVoice(choisi) }
     }
 
     /** Doublage progressif : chaque segment est mis en file, sans bloquer l'interface. */

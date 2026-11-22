@@ -166,7 +166,7 @@ class ScreenCaptureService : Service() {
         val n = Notification.Builder(this, CANAL)
             .setContentTitle("Traduction d'écran active")
             .setContentText("Capture consentie en cours. Touchez pour arrêter.")
-            .setSmallIcon(android.R.drawable.ic_menu_translate)
+            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .build()
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             startForeground(NOTIF_ID, n, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
