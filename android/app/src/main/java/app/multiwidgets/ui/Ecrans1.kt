@@ -250,9 +250,10 @@ fun EcranTraducteurTexte() {
             Button(onClick = {
                 scope.launch {
                     val r = app.multiwidgets.ai.translation.traduireSelonRouteur(ctx, source)
-                    sortie = r.traduction ?: r.message ?: "Traduction impossible."
-                    if (r.traduction != null) app.multiwidgets.ai.history.HistoryRepository(ctx)
-                        .ajouter(app.multiwidgets.ai.history.HistoryRepository.Entree(source, r.traduction, r.langueSource, System.currentTimeMillis()))
+                    val trad = r.traduction
+                    sortie = trad ?: r.message ?: "Traduction impossible."
+                    if (trad != null) app.multiwidgets.ai.history.HistoryRepository(ctx)
+                        .ajouter(app.multiwidgets.ai.history.HistoryRepository.Entree(source, trad, r.langueSource, System.currentTimeMillis()))
                 }
             }) { Text("Traduire") }
             Text(sortie, style = MaterialTheme.typography.bodyLarge)
