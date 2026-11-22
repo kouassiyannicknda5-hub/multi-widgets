@@ -31,4 +31,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0'
+    // org.json est fourni par Android sur l'appareil, mais absent du
+    // classpath JVM des tests unitaires : implémentation réelle pour les tests.
+    testImplementation 'org.json:json:20240303'
 }
