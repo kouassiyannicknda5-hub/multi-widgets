@@ -5,8 +5,9 @@
  * Vérifie le visuel officiel recréé : tableau de bord 4 tuiles + navigation
  * basse, dock latéral + menu, 4 fenêtres simultanées, traduction, voix &
  * sous-titres & doublage, paramètres avancés, historique, /app, installation.
- * La barre latérale (dock) est permanente : jamais masquable, toujours visible.
- * 47 assertions. */
+ * La barre latérale (dock) est permanente : jamais masquable, toujours visible,
+ * et déplaçable par sa poignée ⠿ (position mémorisée).
+ * 48 assertions. */
 const { JSDOM } = require("jsdom");
 const fs = require("fs");
 const path = require("path");
@@ -73,6 +74,7 @@ function boot(storage) {
 
   console.log("— Dock latéral (panneau 2) —");
   check("dock : 6 icônes d'apps + menu ⋯", document.querySelectorAll("#dock button").length === 7);
+  check("poignée de déplacement ⠿ présente", !!document.querySelector("#dock .grip"));
   click(window, document.querySelector("#dock button:last-child"));
   await wait(20);
   check("le menu s'ouvre avec 5 entrées (sans « Masquer la barre »)", document.querySelectorAll("#dockmenu button").length === 5);

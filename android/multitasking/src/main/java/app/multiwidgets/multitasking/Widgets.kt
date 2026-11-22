@@ -9,11 +9,13 @@ import android.content.Intent
 import android.net.Uri
 import android.view.View
 import android.widget.RemoteViews
+import app.multiwidgets.core.LauncherRepository
 
 /**
  * Widget d'écran d'accueil natif : dessiné par le lanceur Android, en dehors
- * de toute application ouverte. Un toucher sur une case ouvre directement
- * l'application cible dans le navigateur : Multi-widgets ne s'ouvre jamais.
+ * de toute application ouverte. Un toucher sur une case OUVRE L'APPLICATION
+ * NATIVE installée (pas un lien web) ; le lien ne sert que de repli si l'app
+ * n'est pas installée. Multi-widgets ne s'ouvre jamais.
  */
 class Widgets : AppWidgetProvider() {
 
@@ -41,7 +43,9 @@ class Widgets : AppWidgetProvider() {
                 if (a != null && a.u.isNotEmpty()) {
                     v.setViewVisibility(id, View.VISIBLE)
                     v.setTextViewText(id, "${if (a.g.isEmpty()) "•" else a.g}\n${a.n}")
-                    val it = Intent(Intent.ACTION_VIEW, Uri.parse(a.u))
+                    val natif = if (a.paquet.isNotEmpty())
+                        LauncherRepository.launchIntent(context, a.paquet) else null
+                    val it = (natif ?: Intent(Intent.ACTION_VIEW, Uri.parse(a.u)))
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     v.setOnClickPendingIntent(
                         id,

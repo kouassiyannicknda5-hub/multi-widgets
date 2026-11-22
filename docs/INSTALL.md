@@ -23,9 +23,18 @@
 
 ## Widget d'écran d'accueil
 Appui long sur l'écran d'accueil → **Widgets** → « Multi-widgets » → glisser.
-Chaque case ouvre directement son site dans le navigateur, sans ouvrir
-l'application. Réglage des cases : tableau de bord → widget, ou l'activité de
-configuration du widget.
+Chaque case ouvre **l'application native installée** directement, sans ouvrir
+Multi-widgets ni renvoyer vers un lien web (le lien ne sert que de repli si
+l'application n'est pas installée).
+
+**Ajouter vos applications du téléphone** : tableau de bord → widget, ou
+l'activité de configuration `/app` → **« ➕ Ajouter une application du
+téléphone »** : un sélecteur liste toutes les applications installées avec
+recherche ; toucher une app l'ajoute au widget **et** à la barre latérale.
+
+**Barre latérale** : déplaçable par sa poignée ⠿ (la position est mémorisée).
+Le bouton ☰ ouvre un panneau listant toutes les applications installées :
+un appui ouvre l'app, un **appui long l'épingle** sur la barre et le widget.
 
 ## Permissions et pourquoi
 | Permission | Moment | Raison affichée |

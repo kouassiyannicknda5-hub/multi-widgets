@@ -146,6 +146,7 @@ section.on{display:block}
 #dock{position:fixed;left:8px;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:8px 6px;backdrop-filter:blur(8px)}
 #dock[hidden]{display:none}
 #dock button{width:40px;height:40px;border-radius:50%;background:var(--card2);border:1px solid var(--line);font-size:18px;display:flex;align-items:center;justify-content:center}
+#dock .grip{height:16px;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:13px;cursor:grab;touch-action:none;user-select:none}
 #dockmenu{position:fixed;left:60px;top:50%;transform:translateY(-50%);z-index:52;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;backdrop-filter:blur(10px);min-width:190px}
 #dockmenu[hidden]{display:none}
 #dockmenu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border-radius:12px;font-size:13px}
@@ -168,6 +169,7 @@ input[type=range]{accent-color:var(--acc1)}
 .sh-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .sh-hd b{flex:1;font-size:14px}
 .sh-hd code{background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12px}
+.sh-note{color:var(--mute);font-size:11px;margin:0 0 8px;line-height:1.45}
 .row{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px dashed var(--line);font-size:13px}
 .row b{font-size:18px;font-weight:400}
 .row .rn{font-weight:700}
@@ -319,6 +321,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
 <div id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sht">
   <div class="sh-hd"><code>/app</code><b id="sht">Applications disponibles</b><button id="shc" type="button" aria-label="Fermer le panneau">✕</button></div>
+  <p class="sh-note">Sur le web, un navigateur ne peut pas ouvrir vos applications natives : les entrées ouvrent des sites. Dans l'APK Android, le widget et la barre ouvrent vos applications installées directement, sans lien web.</p>
   <div id="shl"></div>
   <form id="shf">
     <input id="f-g" maxlength="4" placeholder="🎵" aria-label="Glyphe (facultatif)">
@@ -570,6 +573,9 @@ document.querySelectorAll("#bnav button").forEach(function(b){b.addEventListener
 var DOCK=document.getElementById("dock"),DMENU=document.getElementById("dockmenu");
 function paintDock(){
   DOCK.innerHTML="";
+  var grip=document.createElement("div");
+  grip.className="grip";grip.textContent="⠿";grip.setAttribute("aria-label","Déplacer la barre latérale");
+  DOCK.appendChild(grip);dockDrag(grip);
   state.catalog.slice(0,6).forEach(function(a,k){
     var b=document.createElement("button");
     b.type="button";b.textContent=a.g||"•";b.setAttribute("aria-label",a.n);
@@ -585,6 +591,34 @@ function paintDock(){
   more.type="button";more.textContent="⋯";more.setAttribute("aria-label","Menu de la barre latérale");
   more.addEventListener("click",function(){DMENU.hidden=!DMENU.hidden});
   DOCK.appendChild(more);
+  dockRestore();
+}
+/* Barre latérale déplaçable : la poignée ⠿ la déplace, la position est mémorisée. */
+function dockDrag(grip){
+  var drag=false,sx=0,sy=0,ox=0,oy=0;
+  grip.addEventListener("pointerdown",function(e){
+    drag=true;sx=e.clientX;sy=e.clientY;
+    var r=DOCK.getBoundingClientRect();ox=r.left;oy=r.top;
+    DOCK.style.transform="none";
+    if(grip.setPointerCapture){try{grip.setPointerCapture(e.pointerId)}catch(_){}}
+    if(e.preventDefault)e.preventDefault();
+  });
+  grip.addEventListener("pointermove",function(e){
+    if(!drag)return;
+    var x=ox+(e.clientX-sx),y=oy+(e.clientY-sy);
+    x=Math.max(0,Math.min(window.innerWidth-DOCK.offsetWidth,x));
+    y=Math.max(0,Math.min(window.innerHeight-DOCK.offsetHeight,y));
+    DOCK.style.left=x+"px";DOCK.style.top=y+"px";
+  });
+  function fin(){if(!drag)return;drag=false;
+    trSet("dockx",String(Math.round(parseFloat(DOCK.style.left)||0)));
+    trSet("docky",String(Math.round(parseFloat(DOCK.style.top)||0)));}
+  grip.addEventListener("pointerup",fin);
+  grip.addEventListener("pointercancel",function(){drag=false});
+}
+function dockRestore(){
+  var x=trGet("dockx",""),y=trGet("docky","");
+  if(x!==""&&y!==""){DOCK.style.transform="none";DOCK.style.left=x+"px";DOCK.style.top=y+"px";}
 }
 DMENU.addEventListener("click",function(ev){
   var b=ev.target.closest("button[data-act]");if(!b)return;

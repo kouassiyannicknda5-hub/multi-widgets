@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Le widget : une grille de 8 cases posée sur l'écran d'accueil.
-     Chaque case ouvre directement son application dans le navigateur :
-     aucune activité de Multi-Widgets ne s'ouvre. -->
+     Chaque case ouvre l'application native installée (lien web en repli
+     uniquement) : aucune activité de Multi-Widgets ne s'ouvre. -->
 <GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
