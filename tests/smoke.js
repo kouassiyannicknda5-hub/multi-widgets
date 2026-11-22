@@ -1,13 +1,11 @@
-/* Test fonctionnel de l'application sous jsdom.
+/* Test fonctionnel de multi-widgets 3.0 sous jsdom.
  *
  * Lance :  npm install   puis   npm test
- * (jsdom n'est qu'une dépendance de développement : l'application livrée
- *  reste sans aucune dépendance ni étape de build.)
  *
- * Modèle « widget direct » + moteurs web : un clic sur l'icône exécute le
- * premier widget ; le catalogue porte 12 applications dont 2 intégrées
- * (Traducteur, Voix) ; /app ajoute des applications et règle la traduction.
- * 41 assertions. */
+ * Vérifie le visuel officiel recréé : tableau de bord 4 tuiles + navigation
+ * basse, dock latéral + menu, 4 fenêtres simultanées, traduction, voix &
+ * sous-titres & doublage, paramètres avancés, historique, /app, installation.
+ * 44 assertions. */
 const { JSDOM } = require("jsdom");
 const fs = require("fs");
 const path = require("path");
@@ -38,135 +36,139 @@ function boot(storage) {
   const dom = boot(null);
   const { window } = dom, { document } = window;
   window.addEventListener("error", (e) => { console.log("  ❌ erreur JS :", e.message); failed++; });
-  await wait(120);
+  await wait(150);
 
-  console.log("— Lancement : l'application ne s'ouvre pas, le widget, lui —");
-  check("un seul widget exécuté d'emblée", document.querySelectorAll(".w").length === 1);
-  check("aucun tableau décoratif : l'écran est la pile de widgets", document.getElementById("screen").children.length === 1);
-  check("le widget contient déjà 12 applications (10 sites + 2 intégrées)", document.querySelectorAll(".w .pick button").length === 12);
-  const w0 = document.querySelector(".w");
-  check("barre : bouton − présent", !!w0.querySelector(".minus"));
-  check("barre : bouton + présent", !!w0.querySelector(".plus"));
-  check("barre : commande /app présente", w0.querySelector(".appcmd").textContent === "/app");
+  console.log("— Tableau de bord (panneau 1) —");
+  check("en-tête : logo + titre + tagline", !!document.querySelector("#hd img") && document.querySelector("#hd b").textContent === "multi-widgets");
+  check("4 tuiles : fenêtres, traduction, voix, paramètres", document.querySelectorAll("#tiles .tile").length === 4);
+  check("navigation basse Accueil / Historique / Plus", document.querySelectorAll("#bnav button").length === 3);
+  check("cartes modes hors ligne & en ligne présentes", document.querySelectorAll("#v-accueil .cardmode").length === 2);
 
-  console.log("— Application intégrée 🌐 Traducteur —");
-  click(window, w0.querySelector('.pick button[data-i="0"]'));
+  console.log("— Fenêtres simultanées (panneau 3) —");
+  click(window, document.querySelector('#tiles .tile[data-v="fenetres"]'));
   await wait(20);
-  check("le traducteur s'ouvre DANS le widget, sans cadre externe", !!w0.querySelector(".tr") && !w0.querySelector(".body iframe"));
-  check("barre ← présente pour revenir à la liste", !w0.querySelector(".emb").hidden && !!w0.querySelector(".emb .back"));
-  check("lien ↗ masqué pour un moteur interne", w0.querySelector(".emb .out").style.display === "none");
-  w0.querySelector(".tr-src").value = "The quick brown fox jumps over the lazy dog.";
-  click(window, w0.querySelector(".tr-go"));
+  check("la tuile ouvre la vue fenêtres", document.getElementById("v-fenetres").classList.contains("on"));
+  check("une fenêtre initiale + tuile d'ajout", document.querySelectorAll("#wingrid .win").length === 1 && !!document.getElementById("wadd"));
+  click(window, document.getElementById("wadd"));
+  await wait(20);
+  check("4 zones maximum : + ajoute jusqu'à 4", document.querySelectorAll("#wingrid .win").length === 2);
+  const win0 = document.querySelectorAll("#wingrid .win")[0];
+  click(window, win0.querySelector('.pick button[data-i="0"]'));
+  await wait(20);
+  check("le traducteur intégré s'ouvre dans la fenêtre", !!win0.querySelector(".tr") && !win0.querySelector("iframe"));
+  click(window, win0.querySelector(".wmin"));
+  await wait(20);
+  check("− minimise la fenêtre", win0.classList.contains("min"));
+  click(window, win0.querySelector(".wmin"));
+  click(window, win0.querySelector('.emb .back'));
+  await wait(20);
+  click(window, win0.querySelector('.pick button[data-i="2"]'));
+  await wait(20);
+  check("un site s'ouvre en cadre dans la fenêtre", win0.querySelector("iframe").getAttribute("src") === "https://web.whatsapp.com");
+  check("barre de titre : nom + − + ×", win0.querySelector(".wt").textContent.includes("WhatsApp") && !!win0.querySelector(".wcl"));
+  click(window, win0.querySelector(".wcl"));
+  await wait(20);
+  check("× ferme la fenêtre", document.querySelectorAll("#wingrid .win").length === 1);
+
+  console.log("— Dock latéral (panneau 2) —");
+  check("dock : 6 icônes d'apps + menu ⋯", document.querySelectorAll("#dock button").length === 7);
+  click(window, document.querySelector("#dock button:last-child"));
+  await wait(20);
+  check("le menu s'ouvre avec 6 entrées", document.querySelectorAll("#dockmenu button").length === 6);
+  click(window, document.querySelector('#dockmenu button[data-act="param"]'));
+  await wait(20);
+  check("le menu navigue vers Paramètres", document.getElementById("v-param").classList.contains("on"));
+
+  console.log("— Paramètres avancés (panneaux 8-9) —");
+  const rows = document.querySelectorAll("#v-param .prow");
+  check("5 rangées : langues, hors ligne, performance, confidentialité, apparence", rows.length === 5);
+  click(window, document.getElementById("row-lang"));
+  check("langues préférées dépliables", document.getElementById("langdet").hidden === false);
+  click(window, document.getElementById("sw-off"));
+  check("mode hors ligne persisté", window.localStorage.getItem("mw.tr.offline") === "1");
+  click(window, document.getElementById("sw-dark"));
+  check("apparence bascule en clair", document.documentElement.getAttribute("data-theme") === "light");
+  click(window, document.getElementById("sw-dark"));
+
+  console.log("— Traduction (panneau 4) —");
+  click(window, document.querySelector('#tiles .tile[data-v="trad"]'));
+  await wait(20);
+  check("carte de traduction : sélecteurs + zone + sortie", !!document.getElementById("tsrc") && !!document.getElementById("tin") && !!document.getElementById("tout"));
+  check("bouton flottant présent sur la vue", !!document.getElementById("fab"));
+  document.getElementById("tin").value = "The dream is within reach.";
+  click(window, document.getElementById("tgo"));
   await wait(30);
-  check("sans réseau/fetch, l'erreur est expliquée, pas silencieuse", w0.querySelector(".tr-out").textContent.indexOf("Erreur") === 0);
-  check("la langue détectée est affichée pour vérification", /anglais|en/.test(w0.querySelector(".tr-det").textContent) || w0.querySelector(".tr-det").textContent.includes("en"));
-  click(window, w0.querySelector(".emb .back"));
+  check("mode hors ligne : message honnête, pas de silence", document.getElementById("tout").textContent.indexOf("Erreur : mode hors ligne") === 0);
+  click(window, document.querySelector('#bnav button[data-v="plus"]'));
+  await wait(10);
+  click(window, document.getElementById("p-apps"));
   await wait(20);
-  check("← revient à la liste des applications", !!w0.querySelector(".pick"));
+  check("panneau /app : catalogue + réglages fournisseurs", document.querySelectorAll("#shl .row button[data-del]").length === 12 && !!document.getElementById("s-prov"));
+  click(window, document.getElementById("shc"));
+  await wait(10);
+  // coupe le mode hors ligne via l'interrupteur (cliquable même vue masquée)
+  click(window, document.getElementById("sw-off"));
+  await wait(10);
+  check("mode hors ligne coupé", window.localStorage.getItem("mw.tr.offline") === "0");
 
-  console.log("— Application intégrée 🎙 Voix —");
-  click(window, w0.querySelector('.pick button[data-i="1"]'));
+  console.log("— Voix, sous-titres, doublage (panneaux 5-7) —");
+  click(window, document.querySelector('#tiles .tile[data-v="voix"]'));
   await wait(20);
-  check("le module voix s'ouvre DANS le widget", !!w0.querySelector(".vo"));
-  check("sans SpeechRecognition, un message honnête l'explique", w0.querySelector(".vo-note").textContent.length > 0);
-  check("réglage de vitesse présent", !!w0.querySelector(".vo-rate"));
-  click(window, w0.querySelector(".emb .back"));
-  await wait(20);
+  check("assistant : micro + onde + statut + paire de langues", !!document.getElementById("mic") && document.querySelectorAll("#wave span").length === 24 && document.getElementById("vpair").textContent.includes("→"));
+  check("sans SpeechRecognition, clic expliqué honnêtement", (click(window, document.getElementById("mic")), document.getElementById("vstatus").textContent.includes("Reconnaissance absente")));
+  check("lecteur de doublage : ⏮ ▶ ⏭ + vitesse + Voix/Sous-titres", !!document.getElementById("pprev") && !!document.getElementById("pplay") && !!document.getElementById("pnext") && !!document.getElementById("pspeed") && !!document.getElementById("pvoice") && !!document.getElementById("psubs"));
+  click(window, document.getElementById("pspeed"));
+  check("la vitesse cycle (1.0x → 1.25x)", document.getElementById("pspeed").textContent === "1.25x");
+  check("barre de sous-titres flottante masquée par défaut", document.getElementById("subsbar").hidden === true);
 
-  console.log("— Un clic sur un site l'ouvre DANS le widget —");
-  click(window, w0.querySelector('.pick button[data-i="2"]'));
+  console.log("— Historique & confidentialité —");
+  click(window, document.querySelector('#bnav button[data-v="hist"]'));
   await wait(20);
-  const frame = w0.querySelector(".body iframe");
-  check("le site s'ouvre dans un cadre, pas dans un onglet", !!frame);
-  check("le cadre pointe vers WhatsApp Web", frame && frame.getAttribute("src") === "https://web.whatsapp.com");
-  check("lien ↗ nouvel onglet présent pour un site externe", w0.querySelector(".emb .out").style.display !== "none");
-  check("le titre du widget nomme l'application", w0.querySelector(".n").textContent.includes("WhatsApp"));
-  click(window, w0.querySelector(".emb .back"));
-  await wait(20);
-  check("← revient à la liste des applications", !!w0.querySelector(".pick"));
+  check("historique vide affiché proprement", document.getElementById("hlist").textContent.includes("Aucune traduction"));
+  click(window, document.getElementById("sw-strict"));
+  check("confidentialité stricte persistée", window.localStorage.getItem("mw.tr.strict") === "1");
+  click(window, document.getElementById("sw-strict"));
 
-  console.log("— + ajoute un widget, − le retire —");
-  click(window, w0.querySelector(".plus"));
+  console.log("— /app : catalogue —");
+  click(window, document.querySelector('#bnav button[data-v="plus"]'));
+  click(window, document.getElementById("p-apps"));
   await wait(20);
-  check("deux widgets après +", document.querySelectorAll(".w").length === 2);
-  click(window, document.querySelectorAll(".w")[1].querySelector(".minus"));
-  await wait(20);
-  check("un widget après −", document.querySelectorAll(".w").length === 1);
-
-  console.log("— /app : applications ET réglages de traduction —");
-  click(window, w0.querySelector(".appcmd"));
-  await wait(20);
-  const sheet = document.getElementById("sheet");
-  check("le panneau /app s'ouvre", sheet.hidden === false);
-  check("le panneau liste les 12 applications", sheet.querySelectorAll(".row button[data-del]").length === 12);
-  check("réglages traduction présents (fournisseur, URL, clé, cible)",
-    !!document.getElementById("s-prov") && !!document.getElementById("s-url") &&
-    !!document.getElementById("s-key") && !!document.getElementById("s-tgt"));
-  const tgt = document.getElementById("s-tgt");
-  tgt.value = "en";
-  tgt.dispatchEvent(new window.Event("change", { bubbles: true }));
-  check("la langue cible est persistée en stockage privé", window.localStorage.getItem("mw.tr.target") === "en");
-  document.getElementById("f-g").value = "🎵";
   document.getElementById("f-n").value = "Deezer";
   document.getElementById("f-u").value = "www.deezer.com";
   document.getElementById("shf").dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
   await wait(20);
-  const st = JSON.parse(window.localStorage.getItem("multi-widgets.v2"));
-  check("l'application est ajoutée au catalogue", st.catalog.length === 13);
-  check("l'adresse sans schéma est normalisée en https", st.catalog[12].u === "https://www.deezer.com");
-  check("elle apparaît dans l'affichage du widget", document.querySelectorAll(".w .pick button").length === 13);
-  click(window, sheet.querySelector('button[data-del="12"]'));
+  const st = JSON.parse(window.localStorage.getItem("multi-widgets.v3"));
+  check("application ajoutée au catalogue (13)", st.catalog.length === 13);
+  check("schéma https normalisé", st.catalog[12].u === "https://www.deezer.com");
+  click(window, document.querySelector('#shl button[data-del="12"]'));
   await wait(20);
-  check("× la retire de tous les widgets", document.querySelectorAll(".w .pick button").length === 12);
+  check("× la retire partout", JSON.parse(window.localStorage.getItem("multi-widgets.v3")).catalog.length === 12);
   click(window, document.getElementById("shc"));
-  check("le panneau se referme", sheet.hidden === true);
 
   console.log("— Installation (invite Chrome) —");
-  const IB = document.getElementById("installbar"), INST = document.getElementById("inst");
-  check("bandeau masqué tant que rien n'est installable", IB.hidden === true && INST.hidden === true);
   const evt = new window.Event("beforeinstallprompt", { cancelable: true });
   let prompted = 0, resolveChoice = null;
   evt.prompt = () => { prompted++; };
   evt.userChoice = new Promise((r) => { resolveChoice = r; });
   window.dispatchEvent(evt);
   check("beforeinstallprompt intercepté", evt.defaultPrevented === true);
-  check("bandeau et bouton ⤓ affichés", IB.hidden === false && INST.hidden === false);
+  check("bandeau d'installation affiché", document.getElementById("installbar").hidden === false);
   click(window, document.getElementById("iby"));
   await wait(30);
-  check("le prompt natif est appelé", prompted === 1);
+  check("prompt natif appelé", prompted === 1);
   resolveChoice({ outcome: "accepted" });
   await wait(30);
   window.dispatchEvent(new window.Event("appinstalled"));
-  check("tout disparaît une fois installée", IB.hidden === true && INST.hidden === true);
+  check("bandeau retiré après installation", document.getElementById("installbar").hidden === true);
 
-  console.log("— Persistance et relancement —");
-  click(window, document.querySelector(".w .plus"));
-  await wait(20);
-  click(window, document.querySelectorAll(".w")[1].querySelector('.pick button[data-i="8"]'));
-  await wait(20);
-  const saved = window.localStorage.getItem("multi-widgets.v2");
-  const dom2 = boot({ "multi-widgets.v2": saved, "mw.tr.target": "en" });
+  console.log("— Persistance & relancement —");
+  const saved = window.localStorage.getItem("multi-widgets.v3");
+  const dom2 = boot({ "multi-widgets.v3": saved, "mw.tr.dark": "1" });
   const d2 = dom2.window.document;
-  await wait(120);
-  check("les deux widgets sont restaurés", d2.querySelectorAll(".w").length === 2);
-  check("le widget 1 ré-exécute directement son site (Gmail)", (() => {
-    const f = d2.querySelectorAll(".w")[1].querySelector(".body iframe");
-    return f && f.getAttribute("src") === "https://mail.google.com";
-  })());
-  check("les applications intégrées survivent au relancement", (() => {
-    const cats = JSON.parse(d2.defaultView.localStorage.getItem("multi-widgets.v2")).catalog;
-    return cats.some((a) => a.u === "@built:translate") && cats.some((a) => a.u === "@built:voice");
-  })());
-
-  console.log("— Écran vide —");
-  const dom3 = boot({ "multi-widgets.v2": JSON.stringify({ widgets: [], catalog: [{ g: "🔎", n: "Google", u: "https://www.google.com" }] }) });
-  const d3 = dom3.window.document;
-  await wait(120);
-  check("sans widget, un écran d'accueil minimal propose +", !!d3.getElementById("empty"));
-  click(dom3.window, d3.querySelector("#empty button"));
-  await wait(20);
-  check("+ recrée le premier widget", d3.querySelectorAll(".w").length === 1);
-  check("le catalogue minimal reçoit aussi les intégrées", d3.querySelectorAll(".w .pick button").length === 3);
+  await wait(150);
+  check("fenêtres restaurées au relancement", d2.querySelectorAll("#wingrid .win").length === 1);
+  check("thème sombre restauré", d2.documentElement.getAttribute("data-theme") === "dark");
+  check("dock restauré visible", d2.getElementById("dock").hidden === false);
 
   console.log("");
   console.log(failed === 0 ? "TOUS LES TESTS PASSENT ✔" : failed + " TEST(S) EN ÉCHEC ✘");

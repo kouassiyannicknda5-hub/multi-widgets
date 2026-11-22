@@ -1,272 +1,394 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1c2b3a">
+<meta name="theme-color" content="#142057">
 <link rel="icon" href="icons/icon-192.png">
-<title>Multi-Widgets</title>
+<title>multi-widgets — Multitâche • Traduction IA • Assistant Intelligent</title>
 <style>
-/* --- Palette claire (défaut) --- */
-:root{--bg:#e9edf1;--panel:#f4f6f8;--ink:#14181d;--mute:#5d6875;--line:#d5dae0;--accent:#ff7a1a;--tile:#fff}
-
-/* --- Palette sombre ---
-   Ordre volontaire : à spécificité égale, la dernière règle déclarée gagne.
-   Variables communes, puis surcharge du thème système, puis thèmes explicites. */
-:root{--d-bg:#10151b;--d-panel:#1b2128;--d-ink:#eef1f4;--d-mute:#9aa6b3;--d-line:#323b45;--d-tile:#252d36}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:var(--d-bg);--panel:var(--d-panel);--ink:var(--d-ink);--mute:var(--d-mute);--line:var(--d-line);--tile:var(--d-tile)}}
-:root[data-theme="dark"]{--bg:var(--d-bg);--panel:var(--d-panel);--ink:var(--d-ink);--mute:var(--d-mute);--line:var(--d-line);--tile:var(--d-tile)}
-:root[data-theme="light"]{--bg:#e9edf1;--panel:#f4f6f8;--ink:#14181d;--mute:#5d6875;--line:#d5dae0;--tile:#fff}
-
+/* ------------------------------------------------------------------
+   multi-widgets — tout en un, sur votre écran.
+   Palette bleu/violet du visuel officiel ; thèmes sombre (défaut) et clair.
+------------------------------------------------------------------- */
+:root{--bg1:#142057;--bg2:#3B0F6E;--card:rgba(27,35,80,.82);--card2:#232B63;--ink:#EAF0FF;--mute:#9AA8D8;--line:#3A4585;--acc1:#4F8CFF;--acc2:#8A5CFF;--cyan:#66E0FF;--ok:#3DDC84;--tile1:linear-gradient(150deg,#5D7CFF,#7A3BFF);--tile2:linear-gradient(150deg,#3D6DFF,#2B4DE0);--tile3:linear-gradient(150deg,#8A5CFF,#5C2BE0);--tile4:linear-gradient(150deg,#4B5BD8,#31408F)}
+:root[data-theme="light"]{--bg1:#E8EEFF;--bg2:#F3E8FF;--card:rgba(255,255,255,.9);--card2:#EEF1FF;--ink:#14183A;--mute:#5D68A0;--line:#D5DAF0;--tile1:linear-gradient(150deg,#7D95FF,#9A6BFF);--tile2:linear-gradient(150deg,#5D85FF,#4A66E8);--tile3:linear-gradient(150deg,#A585FF,#7A55F0);--tile4:linear-gradient(150deg,#7C8BE8,#5A6BC0)}
 *{box-sizing:border-box}
-html{height:100%}
-body{margin:0;height:100%;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--ink);background:var(--bg);overflow:hidden}
-
-/* L'application ne « s'ouvre » plus : l'écran EST la pile de widgets.
-   Un clic sur l'icône exécute le premier widget, rien d'autre. */
-#screen{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;overflow:auto;
-padding:calc(10px + env(safe-area-inset-top,0px)) calc(10px + env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) calc(10px + env(safe-area-inset-left,0px))}
-@media (min-width:760px){#screen{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(300px,1fr);align-content:stretch}}
-
-.w{display:flex;flex-direction:column;min-height:250px;background:var(--tile);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.16)}
-.bar{display:flex;align-items:center;gap:4px;padding:6px 7px;border-bottom:1px solid var(--line);background:var(--panel)}
-.bar .n{flex:1;font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:4px}
+html,body{height:100%}
+body{margin:0;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--ink);
+background:linear-gradient(160deg,var(--bg1),var(--bg2));overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-.bar button{font-size:15px;padding:2px 8px;color:var(--mute);border-radius:8px;line-height:1.2}
-.bar button:hover{background:var(--line)}
-.bar .plus{color:var(--accent);font-weight:700;font-size:17px}
-.bar .appcmd{font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:10px;padding:3px 8px;color:var(--ink);background:var(--tile)}
+select,input,textarea{font:inherit;color:var(--ink)}
 
-/* Corps du widget : soit la grille d'applications, soit l'application elle-même */
-.body{flex:1;overflow:auto;padding:10px;touch-action:pan-y;-webkit-overflow-scrolling:touch;background:var(--tile)}
-.body iframe{width:100%;height:100%;border:0;display:block;background:#fff;border-radius:8px}
-.pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
-.pick button{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 4px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--ink)}
-.pick button:hover{border-color:var(--accent)}
-.pick b{font-size:22px;font-weight:400}
-.pick .vide{grid-column:1/-1;color:var(--mute);font-size:12px;text-align:center;padding:14px 6px}
+/* ---------- structure ---------- */
+#app{position:absolute;inset:0;display:flex;flex-direction:column;
+padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#hd{display:flex;align-items:center;gap:10px;padding:10px 14px 6px}
+#hd img{width:40px;height:40px;border-radius:10px}
+#hd b{font-size:17px;letter-spacing:.3px}
+#hd span{display:block;font-size:11px;color:var(--mute)}
+#views{flex:1;overflow:auto;padding:8px 14px 12px;scroll-behavior:smooth}
+section{display:none}
+section.on{display:block}
+#bnav{display:flex;border-top:1px solid var(--line);background:var(--card);backdrop-filter:blur(8px)}
+#bnav button{flex:1;padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--mute)}
+#bnav button i{font-style:normal;font-size:18px}
+#bnav button.on{color:var(--cyan)}
 
-/* Applications intégrées : traducteur et voix vivent DANS le widget */
-.tr,.vo{display:flex;flex-direction:column;gap:8px;height:100%}
-.tr textarea{flex:1;min-height:70px;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--panel);color:var(--ink);resize:none}
+/* ---------- tableau de bord ---------- */
+#tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+.tile{border-radius:18px;padding:18px 12px;min-height:104px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#fff;font-weight:700;font-size:13px;box-shadow:0 10px 26px rgba(20,10,60,.35)}
+.tile i{font-style:normal;font-size:26px}
+.tile:nth-child(1){background:var(--tile1)}.tile:nth-child(2){background:var(--tile2)}
+.tile:nth-child(3){background:var(--tile3)}.tile:nth-child(4){background:var(--tile4)}
+#slogan{text-align:center;color:var(--cyan);font-size:12px;margin:10px 0 2px;font-style:italic}
+
+/* ---------- fenêtres simultanées ---------- */
+#wingrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:100%}
+.win{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-height:210px;backdrop-filter:blur(6px)}
+.wbar{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--card2);border-bottom:1px solid var(--line);font-size:12px;font-weight:700}
+.wbar .wt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wbar button{color:var(--mute);font-size:14px;padding:1px 7px;border-radius:7px}
+.wbar button:hover{background:var(--line)}
+.wbody{flex:1;overflow:auto;background:var(--card);touch-action:pan-y}
+.wbody iframe{width:100%;height:100%;border:0;display:block;background:#fff}
+.win.min .wbody,.win.min .emb{display:none}
+.win.min{min-height:0}
+#wadd{border:2px dashed var(--line);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--mute);min-height:210px}
+.pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;padding:8px}
+.pick button{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:9px 4px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.pick b{font-size:20px;font-weight:400}
+.emb{display:flex;align-items:center;gap:6px;padding:4px 7px;background:var(--card2);border-bottom:1px solid var(--line);font-size:11px}
+.emb .n{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.emb button,.emb a{color:var(--mute);padding:1px 7px;border-radius:7px;text-decoration:none}
+
+/* ---------- traduction ---------- */
+.tcard{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;backdrop-filter:blur(8px);box-shadow:0 12px 30px rgba(15,8,50,.35)}
+.tcard .hd{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin-bottom:10px}
+.tcard .hd .lg{width:22px;height:22px;border-radius:7px;background:var(--tile1);display:inline-block}
+.trow{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.trow select{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:7px;font-size:13px}
+.trow .ar{color:var(--acc1);font-weight:700}
+.tcard textarea{width:100%;min-height:84px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:14px;resize:vertical}
+.tout{background:rgba(61,220,132,.10);border:1px solid rgba(61,220,132,.35);border-radius:12px;padding:10px;font-size:14px;min-height:44px;margin:10px 0;color:var(--ink);white-space:pre-wrap}
+.tbtns{display:flex;gap:8px}
+.tbtns button{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:9px;font-size:13px;font-weight:700}
+.tbtns button.go{background:var(--tile2);border:0;color:#fff}
+#fab{position:fixed;right:16px;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:40;width:52px;height:52px;border-radius:16px;background:var(--tile2);color:#fff;font-size:22px;box-shadow:0 10px 24px rgba(20,20,80,.5)}
+.tdet{font-size:11px;color:var(--mute);margin-top:6px}
+
+/* ---------- voix & sous-titres ---------- */
+#mic{display:block;margin:14px auto 8px;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#6FA8FF,#3D2BA8);color:#fff;font-size:34px;box-shadow:0 0 0 6px rgba(111,168,255,.18),0 12px 30px rgba(20,10,70,.5)}
+#mic.live{animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 4px rgba(111,168,255,.35)}50%{box-shadow:0 0 0 14px rgba(111,168,255,.08)}100%{box-shadow:0 0 0 4px rgba(111,168,255,.35)}}
+#wave{display:flex;gap:3px;justify-content:center;align-items:center;height:34px;margin:6px 0}
+#wave span{width:3px;height:8px;border-radius:2px;background:var(--acc2)}
+#wave.live span{animation:wv 1s infinite ease-in-out}
+#wave span:nth-child(3n){animation-delay:.15s;background:var(--cyan)}
+#wave span:nth-child(4n){animation-delay:.3s}
+#wave span:nth-child(5n){animation-delay:.45s;background:var(--acc1)}
+@keyframes wv{0%,100%{height:6px}50%{height:28px}}
+#vstatus{text-align:center;color:var(--mute);font-size:13px}
+#vpair{display:flex;justify-content:center;align-items:center;gap:10px;margin:10px 0;font-size:14px;font-weight:700}
+#vstop{display:block;margin:6px auto;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:9px 26px;font-weight:700}
+#vsubs{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:12px;min-height:54px}
+#vsubs .s{font-size:14px}
+#vsubs .t{font-size:14px;color:var(--cyan)}
+#player{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin-top:12px}
+#player .pt{font-size:13px;font-weight:700}
+#player .ps{font-size:11px;color:var(--mute);margin-bottom:8px}
+#pctl{display:flex;align-items:center;gap:10px;justify-content:center;margin:8px 0}
+#pctl button{font-size:18px;padding:4px 10px;border-radius:10px;background:var(--card2)}
+#pctl .play{background:var(--tile2);color:#fff;font-size:20px;padding:6px 16px;border-radius:14px}
+#pspeed{color:var(--mute);font-size:12px;font-weight:700}
+#pbtns{display:flex;gap:8px;margin-top:8px}
+#pbtns button{flex:1;border-radius:12px;padding:8px;font-size:12px;font-weight:700;background:var(--tile3);color:#fff}
+#pbtns button.off{background:var(--card2);color:var(--mute);border:1px solid var(--line)}
+
+/* ---------- sous-titres flottants ---------- */
+#subsbar{position:fixed;left:10px;right:10px;bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:60;background:rgba(8,6,26,.86);border:1px solid var(--line);border-radius:14px;padding:8px 12px;backdrop-filter:blur(6px)}
+#subsbar[hidden]{display:none}
+#subsbar .s{font-size:13px;color:#fff}
+#subsbar .t{font-size:13px;color:var(--cyan)}
+
+/* ---------- paramètres / plus : listes ---------- */
+.rows{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.prow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;backdrop-filter:blur(6px)}
+.prow .ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;flex:none}
+.prow .tx{flex:1;min-width:0}
+.prow .tx b{display:block;font-size:13px}
+.prow .tx span{font-size:11px;color:var(--mute)}
+.prow .ch{color:var(--mute)}
+.sw{width:44px;height:24px;border-radius:14px;background:var(--line);position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s}
+.sw.on{background:var(--ok)}
+.sw.on::after{left:23px}
+.detail{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px;margin:-4px 0 4px;display:flex;gap:8px}
+.detail select{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px;font-size:13px}
+.cardmode{border-radius:16px;padding:14px;margin-top:10px;border:1px solid var(--line)}
+.cardmode.off{background:rgba(61,220,132,.10);border-color:rgba(61,220,132,.4)}
+.cardmode.onl{background:var(--tile2);border:0;color:#fff}
+.cardmode b{font-size:14px}
+.cardmode li{font-size:12px;margin:6px 0 0 0;list-style:none}
+.cardmode li::before{content:"✓ ";color:var(--ok);font-weight:700}
+.cardmode.onl li::before{color:#BFE8FF}
+
+/* ---------- historique ---------- */
+.hitem{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px}
+.hitem .s{font-size:12px;color:var(--mute)}
+.hitem .t{font-size:14px}
+.hitem .b{display:inline-block;font-size:10px;font-weight:700;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:1px 7px;margin-top:4px;color:var(--cyan)}
+.empty{color:var(--mute);text-align:center;padding:26px 10px;font-size:13px}
+.danger{background:rgba(255,90,90,.12);border:1px solid rgba(255,90,90,.4);color:#FF9A9A;border-radius:12px;padding:9px;font-weight:700;width:100%}
+
+/* ---------- dock latéral ---------- */
+#dock{position:fixed;left:8px;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:8px 6px;backdrop-filter:blur(8px)}
+#dock[hidden]{display:none}
+#dock button{width:40px;height:40px;border-radius:50%;background:var(--card2);border:1px solid var(--line);font-size:18px;display:flex;align-items:center;justify-content:center}
+#dockhandle{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:51;background:var(--card2);border:1px solid var(--line);border-left:0;border-radius:0 12px 12px 0;padding:10px 4px;color:var(--mute)}
+#dockmenu{position:fixed;left:60px;top:50%;transform:translateY(-50%);z-index:52;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;backdrop-filter:blur(10px);min-width:190px}
+#dockmenu[hidden]{display:none}
+#dockmenu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border-radius:12px;font-size:13px}
+#dockmenu button:hover{background:var(--card2)}
+
+/* ---------- moteurs intégrés (fenêtres) ---------- */
+.tr,.vo{display:flex;flex-direction:column;gap:8px;height:100%;padding:8px}
+.tr textarea{flex:1;min-height:64px;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--card2);color:var(--ink);resize:none}
 .tr-bar,.vo-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.tr-bar select,.row select{font:inherit;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:4px;background:var(--tile);color:var(--ink)}
-.tr-bar button,.vo-bar button,.vo-go{background:var(--accent);color:#fff;border-radius:10px;padding:7px 10px;font-weight:700;font-size:12px}
-.tr-out,.vo-out{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:13px;min-height:40px;white-space:pre-wrap}
+.tr-bar select{font-size:12px;border:1px solid var(--line);border-radius:8px;padding:4px;background:var(--card2)}
+.tr-bar button,.vo-bar button,.vo-go{background:var(--tile2);color:#fff;border-radius:10px;padding:7px 10px;font-weight:700;font-size:12px}
+.tr-out,.vo-out{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:13px;min-height:38px;white-space:pre-wrap}
 .tr-det,.vo-note{font-size:11px;color:var(--mute)}
 .vo-src{font-size:12px;color:var(--mute);font-style:italic}
-.vo-go{align-self:flex-start}
-input[type=range]{accent-color:var(--accent)}
-.sh-sec{margin-top:14px;font-size:13px;font-weight:700}
-.row input.full{flex:1;font:inherit;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:6px;background:var(--tile);color:var(--ink);min-width:0}
+input[type=range]{accent-color:var(--acc1)}
 
-/* Barre de l'application ouverte dans le widget */
-.emb{display:flex;align-items:center;gap:6px;padding:5px 7px;border-bottom:1px solid var(--line);background:var(--panel)}
-.emb .n{flex:1;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.emb button,.emb a{font-size:14px;padding:2px 8px;color:var(--mute);border-radius:8px;text-decoration:none}
-.emb button:hover,.emb a:hover{background:var(--line)}
-
-/* Écran vide : tous les widgets retirés */
-#empty{margin:auto;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--mute);font-size:13px;text-align:center}
-#empty button{font-size:38px;color:var(--accent);font-weight:700;line-height:1}
-
-/* --- Panneau /app : les applications disponibles de tous les widgets --- */
-#sheet{position:fixed;left:0;right:0;bottom:0;z-index:7000;max-height:82%;overflow:auto;background:var(--panel);color:var(--ink);
-border-top-left-radius:20px;border-top-right-radius:20px;border:1px solid var(--line);box-shadow:0 -12px 34px rgba(0,0,0,.35);
-padding:12px 14px calc(14px + env(safe-area-inset-bottom,0px))}
+/* ---------- panneau /app ---------- */
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:70;max-height:82%;overflow:auto;background:var(--card);color:var(--ink);border-top-left-radius:20px;border-top-right-radius:20px;border:1px solid var(--line);backdrop-filter:blur(12px);padding:12px 14px calc(14px + env(safe-area-inset-bottom,0px))}
 #sheet[hidden]{display:none}
 .sh-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .sh-hd b{flex:1;font-size:14px}
-.sh-hd code{background:var(--tile);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12px}
+.sh-hd code{background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12px}
 .row{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px dashed var(--line);font-size:13px}
 .row b{font-size:18px;font-weight:400}
 .row .rn{font-weight:700}
 .row .ru{flex:1;color:var(--mute);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.row button{color:#c0392b;font-size:16px;padding:0 6px}
+.row button{color:#FF9A9A;font-size:16px;padding:0 6px}
+.row select,.row input.full{flex:1;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:6px;background:var(--card2);min-width:0}
 #shf{display:grid;grid-template-columns:64px 1fr;gap:8px;margin-top:12px}
-#shf input{font:inherit;font-size:13px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--tile);color:var(--ink);min-width:0}
-#shf input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#shf input{font-size:13px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--ink);min-width:0}
 #shf .full{grid-column:1/-1}
-#shf button{grid-column:1/-1;background:var(--accent);color:#fff;border-radius:12px;padding:9px;font-weight:700;font-size:13px}
+#shf button{grid-column:1/-1;background:var(--tile2);color:#fff;border-radius:12px;padding:9px;font-weight:700;font-size:13px}
+.sh-sec{margin-top:14px;font-size:13px;font-weight:700}
 .sh-ft{display:flex;align-items:center;gap:8px;margin-top:14px;color:var(--mute);font-size:12px}
-.sh-ft button{border:1px solid var(--line);border-radius:12px;padding:6px 12px;background:var(--tile)}
+.sh-ft button{border:1px solid var(--line);border-radius:12px;padding:6px 12px;background:var(--card2)}
 
-/* --- Installation (invite « Installer l'application » de Chrome) --- */
-#inst{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:10px;z-index:6500;background:var(--accent);color:#fff;border-radius:16px;padding:7px 12px;font-weight:700;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,.3)}
-#installbar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:6600;display:flex;align-items:center;gap:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:0 12px 34px rgba(0,0,0,.45)}
+/* ---------- installation ---------- */
+#installbar{position:fixed;left:12px;right:12px;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:66;display:flex;align-items:center;gap:10px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:10px 12px;backdrop-filter:blur(10px);box-shadow:0 12px 34px rgba(0,0,0,.45)}
+#installbar[hidden]{display:none}
 #installbar img{border-radius:10px;flex:none}
 #installbar .txt{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
 #installbar .txt b{font-size:13px}
 #installbar .txt span{font-size:12px;color:var(--mute)}
 #installbar .btns{display:flex;gap:6px;flex:none}
-#iby{background:var(--accent);color:#fff;border-radius:12px;padding:8px 12px;font-weight:700;font-size:12px}
+#iby{background:var(--tile2);color:#fff;border-radius:12px;padding:8px 12px;font-weight:700;font-size:12px}
 #ibn{border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:12px;color:var(--mute)}
-
-button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-#live{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+#inst{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:10px;z-index:65;background:var(--tile2);color:#fff;border-radius:16px;padding:7px 12px;font-weight:700;font-size:12px}
+#inst[hidden]{display:none}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+#live{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
 <body>
-<div id="screen"></div>
+<div id="app">
+  <header id="hd">
+    <img src="icons/icon-192.png" alt="Logo multi-widgets">
+    <div><b>multi-widgets</b><span>Multitâche • Traduction IA • Assistant Intelligent</span></div>
+  </header>
+
+  <main id="views">
+    <!-- 1. tableau de bord -->
+    <section id="v-accueil" class="on">
+      <div id="slogan">Tout en un, sur votre écran !</div>
+      <div id="tiles">
+        <button class="tile" data-v="fenetres"><i>🗔</i>Fenêtres Multiples</button>
+        <button class="tile" data-v="trad"><i>🌐</i>Traduction IA</button>
+        <button class="tile" data-v="voix"><i>🎙</i>Voix &amp; Sous-titres</button>
+        <button class="tile" data-v="param"><i>⚙</i>Paramètres</button>
+      </div>
+      <div class="cardmode off">
+        <b>☁ Mode hors ligne</b>
+        <li>OCR &amp; traduction locales, reconnaissance vocale, lecture TTS : dans l'APK Android</li>
+        <li>Sur le web, la traduction passe par le réseau — réglable dans Paramètres</li>
+      </div>
+      <div class="cardmode onl">
+        <b>🌍 Mode en ligne</b>
+        <li>Traduction cloud avancée (MyMemory ou LibreTranslate configuré)</li>
+      </div>
+    </section>
+
+    <!-- 3. fenêtres simultanées -->
+    <section id="v-fenetres"><div id="wingrid"></div></section>
+
+    <!-- 4. traduction -->
+    <section id="v-trad">
+      <div class="tcard">
+        <div class="hd"><span class="lg"></span>Traduction<button id="tclear" aria-label="Effacer" style="margin-left:auto;color:var(--mute)">✕</button></div>
+        <div class="trow">
+          <select id="tsrc" aria-label="Langue source"><option value="auto">Auto</option><option value="fr">Français</option><option value="en">Anglais</option><option value="es">Espagnol</option><option value="ru">Russe</option><option value="zh">Chinois</option><option value="ja">Japonais</option><option value="ko">Coréen</option><option value="ar">Arabe</option><option value="hi">Hindi</option></select>
+          <span class="ar">→</span>
+          <select id="ttgt" aria-label="Langue cible"><option value="fr">Français</option><option value="en">Anglais</option><option value="es">Espagnol</option><option value="de">Allemand</option><option value="pt">Portugais</option><option value="it">Italien</option><option value="zh">Chinois</option><option value="ja">Japonais</option><option value="ko">Coréen</option><option value="ru">Russe</option><option value="ar">Arabe</option><option value="hi">Hindi</option></select>
+        </div>
+        <textarea id="tin" placeholder="Welcome to multi-widgets!"></textarea>
+        <div class="tout" id="tout" aria-live="polite"></div>
+        <div class="tdet" id="tdet"></div>
+        <div class="tbtns"><button class="go" id="tgo">Traduire</button><button id="tcopy">📋 Copier</button><button id="tshare">🔗 Partager</button></div>
+      </div>
+      <button id="fab" aria-label="Inverser les langues">⚗</button>
+    </section>
+
+    <!-- 5-7. voix, sous-titres, doublage -->
+    <section id="v-voix">
+      <button id="mic" aria-label="Activer le micro">🎙</button>
+      <div id="wave" aria-hidden="true"></div>
+      <div id="vstatus">Parlez maintenant…</div>
+      <div id="vpair"></div>
+      <button id="vstop">Arrêter</button>
+      <div id="vsubs"><div class="s" id="vsub-s"></div><div class="t" id="vsub-t"></div></div>
+      <div id="player">
+        <div class="pt" id="ptitle">Doublage vocal</div>
+        <div class="ps" id="psubtitle">Écoutez la traduction</div>
+        <div id="pctl">
+          <button id="pprev" aria-label="Segment précédent">⏮</button>
+          <button class="play" id="pplay" aria-label="Lire">▶</button>
+          <button id="pnext" aria-label="Segment suivant">⏭</button>
+          <span id="pspeed">1.0x</span>
+        </div>
+        <div id="pbtns"><button id="pvoice">🔊 Voix FR</button><button id="psubs">💬 Sous-titres</button></div>
+      </div>
+    </section>
+
+    <!-- 8-9. paramètres -->
+    <section id="v-param">
+      <div class="rows">
+        <div class="prow" id="row-lang"><span class="ic" style="background:var(--tile1)">🌐</span><span class="tx"><b>Langues préférées</b><span id="langsum">Français, Anglais, Chinois</span></span><span class="ch">›</span></div>
+        <div class="detail" id="langdet" hidden>
+          <select id="p-src" aria-label="Langue source préférée"><option value="auto">Auto</option><option value="fr">fr</option><option value="en">en</option><option value="es">es</option><option value="ru">ru</option><option value="zh">zh</option></select>
+          <select id="p-tgt" aria-label="Langue cible préférée"><option value="fr">fr</option><option value="en">en</option><option value="es">es</option><option value="de">de</option><option value="zh">zh</option><option value="ja">ja</option><option value="ko">ko</option><option value="ru">ru</option></select>
+        </div>
+        <div class="prow"><span class="ic" style="background:var(--tile2)">⤓</span><span class="tx"><b>Mode hors ligne</b><span>Désactive les fournisseurs réseau (modèles locaux : APK Android)</span></span><button class="sw" id="sw-off" role="switch" aria-label="Mode hors ligne"></button></div>
+        <div class="prow"><span class="ic" style="background:var(--tile3)">⚡</span><span class="tx"><b>Performance</b><span>Optimisée : animations réduites, historique borné</span></span><button class="sw" id="sw-eco" role="switch" aria-label="Mode économie"></button></div>
+        <div class="prow"><span class="ic" style="background:linear-gradient(150deg,#2FBF71,#1B8A5A)">🛡</span><span class="tx"><b>Confidentialité</b><span>Aucun historique écrit, aucune clé partagée</span></span><button class="sw" id="sw-strict" role="switch" aria-label="Confidentialité stricte"></button></div>
+        <div class="prow"><span class="ic" style="background:var(--tile4)">🌙</span><span class="tx"><b>Apparence</b><span>Mode sombre</span></span><button class="sw" id="sw-dark" role="switch" aria-label="Mode sombre"></button></div>
+      </div>
+    </section>
+
+    <!-- historique -->
+    <section id="v-hist">
+      <div class="rows"><button class="danger" id="hclear">Supprimer tout l'historique</button></div>
+      <div id="hlist" style="margin-top:10px"></div>
+    </section>
+
+    <!-- plus -->
+    <section id="v-plus">
+      <div class="rows">
+        <div class="prow" id="p-install"><span class="ic" style="background:var(--tile2)">⤓</span><span class="tx"><b>Installer l'application</b><span>Icône sur l'écran d'accueil, plein écran</span></span><span class="ch">›</span></div>
+        <div class="prow" id="p-apps"><span class="ic" style="background:var(--tile1)">▦</span><span class="tx"><b>Toutes les applications</b><span>Ajouter, retirer, régler les fournisseurs</span></span><span class="ch">›</span></div>
+        <div class="prow" id="p-dock"><span class="ic" style="background:var(--tile3)">☰</span><span class="tx"><b>Barre latérale</b><span>Afficher ou masquer le dock flottant</span></span><button class="sw on" id="sw-dock" role="switch" aria-label="Barre latérale"></button></div>
+        <div class="prow"><span class="ic" style="background:var(--tile4)">ℹ</span><span class="tx"><b>À propos</b><span>multi-widgets 3.0 — moteurs : traduction cloud, Web Speech API, synthèse vocale. Limites assumées : pas de modèles hors ligne ni de capture d'écran dans un navigateur (voir l'APK Android).</span></span></div>
+      </div>
+    </section>
+  </main>
+
+  <nav id="bnav">
+    <button data-v="accueil" class="on"><i>🏠</i>Accueil</button>
+    <button data-v="hist"><i>🕘</i>Historique</button>
+    <button data-v="plus"><i>⋯</i>Plus</button>
+  </nav>
+</div>
+
+<button id="dockhandle" aria-label="Afficher ou masquer la barre latérale">›</button>
+<aside id="dock" aria-label="Barre latérale flottante"></aside>
+<div id="dockmenu" hidden>
+  <button data-act="apps">▦ Toutes les apps</button>
+  <button data-act="fenetres">🗔 Fenêtres flottantes</button>
+  <button data-act="trad">🌐 Traduction d'écran</button>
+  <button data-act="hist">🕘 Historique</button>
+  <button data-act="param">⚙ Paramètres</button>
+  <button data-act="hide"> Masquer la barre</button>
+</div>
+
+<div id="subsbar" hidden><div class="s" id="sb-s"></div><div class="t" id="sb-t"></div></div>
 
 <div id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sht">
   <div class="sh-hd"><code>/app</code><b id="sht">Applications disponibles</b><button id="shc" type="button" aria-label="Fermer le panneau">✕</button></div>
   <div id="shl"></div>
   <form id="shf">
-    <input id="f-g" maxlength="4" placeholder="" aria-label="Glyphe (facultatif)">
+    <input id="f-g" maxlength="4" placeholder="🎵" aria-label="Glyphe (facultatif)">
     <input id="f-n" placeholder="Nom (ex. Deezer)" required aria-label="Nom de l'application">
     <input id="f-u" class="full" placeholder="Adresse (ex. https://www.deezer.com)" required aria-label="Adresse de l'application">
-    <button type="submit">Ajouter à tous les widgets</button>
+    <button type="submit">Ajouter à toutes les fenêtres</button>
   </form>
   <div class="sh-sec">Traduction &amp; voix (web)</div>
   <div class="row"><span class="rn">Fournisseur</span>
-    <select id="s-prov" aria-label="Fournisseur de traduction">
-      <option value="mymemory">MyMemory (sans clé)</option>
-      <option value="libre">LibreTranslate (configuré)</option>
-    </select>
-  </div>
+    <select id="s-prov" aria-label="Fournisseur de traduction"><option value="mymemory">MyMemory (sans clé)</option><option value="libre">LibreTranslate (configuré)</option></select></div>
   <div class="row"><input id="s-url" class="full" placeholder="URL LibreTranslate (facultatif)" aria-label="URL du fournisseur"></div>
   <div class="row"><input id="s-key" class="full" type="password" placeholder="Clé API (facultatif, stockage local privé)" aria-label="Clé API"></div>
-  <div class="row"><span class="rn">Langue cible</span>
-    <select id="s-tgt" aria-label="Langue cible">
-      <option value="fr">français</option><option value="en">anglais</option><option value="es">espagnol</option>
-      <option value="de">allemand</option><option value="pt">portugais</option><option value="it">italien</option>
-      <option value="zh">chinois</option><option value="ja">japonais</option><option value="ko">coréen</option>
-      <option value="ru">russe</option><option value="ar">arabe</option><option value="hi">hindi</option>
-    </select>
-  </div>
   <div class="sh-ft"><button id="theme" type="button">🌙</button><span>Thème — sans choix, suit le système.</span></div>
 </div>
 
 <div id="installbar" hidden role="dialog" aria-labelledby="ibt">
   <img src="icons/icon-192.png" alt="" width="44" height="44">
-  <div class="txt"><b id="ibt">Installer Multi-Widgets</b><span id="ibm">Vos widgets en une icône, un clic, et rien d'autre.</span></div>
+  <div class="txt"><b id="ibt">Installer multi-widgets</b><span id="ibm">Tout en un, sur votre écran.</span></div>
   <div class="btns"><button id="iby" type="button">Installer</button><button id="ibn" type="button">Plus tard</button></div>
 </div>
 <button id="inst" type="button" hidden>⤓ Installer</button>
 <div id="live" role="status" aria-live="polite"></div>
 
 <script>
-/* ========================================================================
-   Multi-Widgets — modèle « widget direct »
-   Un clic sur l'icône exécute le premier widget : l'application ne s'ouvre
-   pas au-dessus, l'écran EST le widget. Chaque widget porte déjà ses
-   applications ; un clic sur l'une l'ouvre DANS le widget. La commande
-   /app, présente sur chaque widget, ajoute des applications à tous.
-   ======================================================================== */
+/* =====================================================================
+   multi-widgets 3.0 — recréé d'après le visuel officiel :
+   tableau de bord 4 tuiles, dock latéral, 4 fenêtres simultanées,
+   traduction, sous-titres temps réel, doublage vocal, assistant,
+   paramètres avancés, modes hors ligne / en ligne.
+   ===================================================================== */
+var LIVE=document.getElementById("live");
+function announce(m){LIVE.textContent=m}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function trGet(k,d){try{var v=localStorage.getItem("mw.tr."+k);return v===null?d:v}catch(e){return d}}
+function trSet(k,v){try{localStorage.setItem("mw.tr."+k,v)}catch(e){}}
 
-/* Applications intégrées : elles s'ouvrent DANS le widget avec un moteur
-   natif du navigateur (traduction HTTP, Web Speech API), pas dans un cadre. */
-var BUILTINS=[
-  {g:"🌐",n:"Traducteur",u:"@built:translate"},
-  {g:"🎙",n:"Voix",u:"@built:voice"}
-];
+/* --- catalogue d'applications (fenêtres) --- */
+var BUILTINS=[{g:"🌐",n:"Traducteur",u:"@built:translate"},{g:"🎙",n:"Voix",u:"@built:voice"}];
 function withBuiltins(cat){
-  /* En sens inverse : après les unshift, l'ordre déclaré est respecté
-     (Traducteur puis Voix en tête). */
   for(var i=BUILTINS.length-1;i>=0;i--){
     var b=BUILTINS[i];
-    var present=cat.some(function(a){return a.u===b.u});
-    if(!present)cat.unshift(b);
+    if(!cat.some(function(a){return a.u===b.u}))cat.unshift(b);
   }
   return cat;
 }
-
-/* Catalogue par défaut : les applications déjà accessibles partout. */
 function defaults(){return withBuiltins([
-  {g:"💬",n:"WhatsApp",u:"https://web.whatsapp.com"},
-  {g:"🐦",n:"X",u:"https://x.com"},
-  {g:"👥",n:"Facebook",u:"https://m.facebook.com"},
-  {g:"🔎",n:"Google",u:"https://www.google.com"},
-  {g:"📷",n:"Instagram",u:"https://www.instagram.com"},
-  {g:"▶",n:"YouTube",u:"https://m.youtube.com"},
-  {g:"✉",n:"Gmail",u:"https://mail.google.com"},
-  {g:"📍",n:"Maps",u:"https://maps.google.com"},
-  {g:"✈",n:"Telegram",u:"https://web.telegram.org"},
-  {g:"♪",n:"TikTok",u:"https://www.tiktok.com"}
-]);}
-
-var KEY="multi-widgets.v2",KEY1="multi-widgets.v1",THEME_KEY="multi-widgets.theme",MAX=10;
-var SCREEN=document.getElementById("screen"),SHEET=document.getElementById("sheet"),SHL=document.getElementById("shl"),LIVE=document.getElementById("live");
+  {g:"💬",n:"WhatsApp",u:"https://web.whatsapp.com"},{g:"🐦",n:"X",u:"https://x.com"},
+  {g:"👥",n:"Facebook",u:"https://m.facebook.com"},{g:"🔎",n:"Google",u:"https://www.google.com"},
+  {g:"📷",n:"Instagram",u:"https://www.instagram.com"},{g:"▶",n:"YouTube",u:"https://m.youtube.com"},
+  {g:"✉",n:"Gmail",u:"https://mail.google.com"},{g:"📍",n:"Maps",u:"https://maps.google.com"},
+  {g:"✈",n:"Telegram",u:"https://web.telegram.org"},{g:"♪",n:"TikTok",u:"https://www.tiktok.com"}]);}
+var KEY="multi-widgets.v3";
 var state=null;
-
-function announce(m){LIVE.textContent=m}
-function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
-
-/* --- Persistance -------------------------------------------------------
-   v2 : {widgets:[{app:null|index}], catalog:[{g,n,u}]}.
-   Migration depuis la v1 (tableau de positions) : on garde le nombre de
-   widgets et l'application choisie, dans le catalogue par défaut. */
-function save(){
-  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}
-}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 function load(){
   try{
     var d=JSON.parse(localStorage.getItem(KEY));
-    if(d&&Array.isArray(d.widgets)&&Array.isArray(d.catalog)){d.catalog=withBuiltins(d.catalog);return d}
+    if(d&&Array.isArray(d.windows)&&Array.isArray(d.catalog))return d;
   }catch(e){}
   try{
-    var v1=JSON.parse(localStorage.getItem(KEY1));
-    if(Array.isArray(v1)){
-      return {widgets:v1.slice(0,MAX).map(function(w){
-               return {app:(w&&typeof w.app==="number"&&w.app>=0&&w.app<10)?w.app:null};
-             }),catalog:defaults()};
-    }
+    var v2=JSON.parse(localStorage.getItem("multi-widgets.v2"));
+    if(v2&&Array.isArray(v2.catalog))return {windows:[{app:null,min:false}],catalog:withBuiltins(v2.catalog)};
   }catch(e){}
   return null;
 }
 
-/* --- Rendu ------------------------------------------------------------- */
-function widgetBar(i){
-  return '<div class="bar">'
-    +'<button class="minus" type="button" aria-label="Retirer ce widget">−</button>'
-    +'<span class="n"></span>'
-    +'<button class="appcmd" type="button" aria-label="Ajouter des applications à ce widget">/app</button>'
-    +'<button class="plus" type="button" aria-label="Ajouter un widget">+</button>'
-    +'</div>';
-}
-function paintWidget(w,el,i){
-  var n=el.querySelector(".n"),emb=el.querySelector(".emb"),body=el.querySelector(".body");
-  if(w.app===null||!state.catalog[w.app]){
-    n.textContent="Widget "+(i+1);
-    emb.hidden=true;
-    var h='<div class="pick">';
-    if(!state.catalog.length)h+='<div class="vide">Aucune application. Utilisez /app pour en ajouter.</div>';
-    state.catalog.forEach(function(a,k){
-      h+='<button type="button" data-i="'+k+'"><b>'+esc(a.g||"•")+'</b>'+esc(a.n)+'</button>';
-    });
-    body.innerHTML=h+'</div>';
-  }else{
-    var a=state.catalog[w.app];
-    n.textContent=a.g?a.g+" "+a.n:a.n;
-    if(a.u==="@built:translate"){
-      emb.hidden=false;emb.querySelector(".n").textContent=a.n;
-      emb.querySelector(".out").style.display="none";   /* pas d'onglet externe : le moteur est interne */
-      body.innerHTML=TR_HTML;wireTr(body);
-    }else if(a.u==="@built:voice"){
-      emb.hidden=false;emb.querySelector(".n").textContent=a.n;
-      emb.querySelector(".out").style.display="none";
-      body.innerHTML=VO_HTML;wireVo(body);
-    }else{
-      emb.hidden=false;
-      emb.querySelector(".n").textContent=a.n;
-      emb.querySelector(".out").style.display="";
-      emb.querySelector(".out").setAttribute("href",a.u);
-      /* L'application s'ouvre DANS le widget. Certains sites refusent d'être
-         encadrés (X-Frame-Options) : la flèche ↗ ouvre alors dans un onglet. */
-      body.innerHTML='<iframe src="'+esc(a.u)+'" title="'+esc(a.n)+'" loading="lazy" allow="fullscreen; clipboard-write; payment"></iframe>';
-    }
-  }
-}
-
-/* --- Moteurs web de traduction et de voix --------------------------------
-   Réglages lus/écrits en localStorage privé ; aucune clé dans le code. */
-function trGet(k,d){try{var v=localStorage.getItem("mw.tr."+k);return v===null?d:v}catch(e){return d}}
-function trSet(k,v){try{localStorage.setItem("mw.tr."+k,v)}catch(e){}}
-
-/* Détection de langue par écriture puis mots-outils : suffisant pour choisir
-   la paire, et toujours affichée pour vérification humaine. */
+/* --- moteurs de traduction & voix (web) --- */
 function detectLang(t){
   if(/[\u4e00-\u9fff]/.test(t))return "zh";
   if(/[\u3040-\u30ff]/.test(t))return "ja";
@@ -281,263 +403,407 @@ function detectLang(t){
   if(/\b(el|una|los|las|pero|para|con)\b/.test(w))return "es";
   return "fr";
 }
-
 function translateText(text,src,tgt){
   return new Promise(function(res,rej){
-    if(!window.fetch){rej(new Error("traduction réseau non prise en charge par ce navigateur"));return}
+    if(trGet("offline","0")==="1")return rej(new Error("mode hors ligne : les modèles locaux vivent dans l'APK Android"));
+    if(!window.fetch)return rej(new Error("traduction réseau non prise en charge par ce navigateur"));
     var prov=trGet("provider","mymemory");
     if(prov==="libre"&&trGet("libre_url","")){
-      var cle=trGet("libre_key","");
-      var corps={q:text,source:src,target:tgt,format:"text"};
+      var cle=trGet("libre_key",""),corps={q:text,source:src,target:tgt,format:"text"};
       if(cle)corps.api_key=cle;
-      fetch(trGet("libre_url","").replace(/\/+$/,"")+"/translate",{
-        method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(corps)
-      }).then(function(r){if(!r.ok)return rej(new Error("HTTP "+r.status));return r.json()})
+      fetch(trGet("libre_url","").replace(/\/+$/,"")+"/translate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(corps)})
+        .then(function(r){if(!r.ok)return rej(new Error("HTTP "+r.status));return r.json()})
         .then(function(j){res(j.translatedText||"")}).catch(rej);
     }else{
-      fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+
-        "&langpair="+encodeURIComponent(src+"|"+tgt))
+      fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+"&langpair="+encodeURIComponent(src+"|"+tgt))
         .then(function(r){if(!r.ok)return rej(new Error("HTTP "+r.status));return r.json()})
         .then(function(j){var t=j&&j.responseData&&j.responseData.translatedText;
-          if(!t)return rej(new Error("réponse vide du fournisseur"));res(t)})
-        .catch(rej);
+          if(!t)return rej(new Error("réponse vide du fournisseur"));res(t)}).catch(rej);
     }
   });
 }
-
 function speak(text){
-  if(!window.speechSynthesis){announce("Synthèse vocale non prise en charge par ce navigateur");return}
+  if(trGet("tts","1")!=="1")return;
+  if(!window.speechSynthesis){announce("Synthèse vocale non prise en charge");return}
   var u=new SpeechSynthesisUtterance(text);
-  u.lang=trGet("target","fr");
-  u.rate=parseFloat(trGet("rate","1"))||1;
+  u.lang=trGet("target","fr");u.rate=parseFloat(trGet("rate","1"))||1;
   var vs=window.speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(u.lang)===0});
   if(vs.length)u.voice=vs[0];
   window.speechSynthesis.speak(u);
 }
+var FLAGS={fr:"🇫🇷",en:"🇬🇧",es:"🇪🇸",de:"🇩🇪",pt:"🇵🇹",it:"🇮🇹",zh:"🇨🇳",ja:"🇯🇵",ko:"🇰🇷",ru:"🇷🇺",ar:"🇸🇦",hi:"🇮🇳",auto:"🌐"};
+function flag(c){return FLAGS[c]||"🌐"}
 
+/* --- historique --- */
+function histPush(s,t,lang){
+  if(trGet("strict","0")==="1")return;                 // confidentialité stricte : rien n'est écrit
+  var h=histList();h.unshift({s:s,t:t,l:lang,ts:Date.now()});
+  var cap=trGet("eco","0")==="1"?10:50;
+  try{localStorage.setItem("mw.hist",JSON.stringify(h.slice(0,cap)))}catch(e){}
+}
+function histList(){try{return JSON.parse(localStorage.getItem("mw.hist"))||[]}catch(e){return[]}}
+function paintHist(){
+  var el=document.getElementById("hlist"),h=histList();
+  if(!h.length){el.innerHTML='<div class="empty">Aucune traduction en historique.</div>';return}
+  el.innerHTML=h.map(function(e){return '<div class="hitem"><div class="s">'+esc(e.s)+'</div><div class="t">'+esc(e.t)+'</div><span class="b">'+esc(e.l)+'</span></div>'}).join("");
+}
+
+/* --- moteurs intégrés des fenêtres --- */
 var TR_HTML='<div class="tr"><textarea class="tr-src" placeholder="Texte à traduire : russe, chinois, anglais, français…"></textarea>'
-  +'<div class="tr-bar"><select class="tr-src-l" aria-label="Langue source"><option value="auto">auto</option><option value="fr">fr</option><option value="en">en</option><option value="es">es</option><option value="ru">ru</option><option value="zh">zh</option><option value="ja">ja</option><option value="ko">ko</option><option value="ar">ar</option><option value="hi">hi</option></select>'
-  +'<span class="tr-det"></span><button class="tr-go" type="button">Traduire</button></div>'
-  +'<div class="tr-out" aria-live="polite"></div>'
-  +'<div class="tr-bar"><button class="tr-copy" type="button">Copier</button><button class="tr-speak" type="button">🔊 Écouter</button></div></div>';
-
+ +'<div class="tr-bar"><select class="tr-src-l" aria-label="Langue source"><option value="auto">auto</option><option value="fr">fr</option><option value="en">en</option><option value="es">es</option><option value="ru">ru</option><option value="zh">zh</option><option value="ja">ja</option><option value="ko">ko</option></select>'
+ +'<span class="tr-det"></span><button class="tr-go" type="button">Traduire</button></div>'
+ +'<div class="tr-out" aria-live="polite"></div>'
+ +'<div class="tr-bar"><button class="tr-copy" type="button">Copier</button><button class="tr-speak" type="button">🔊 Écouter</button></div></div>';
 function wireTr(body){
   var src=body.querySelector(".tr-src"),out=body.querySelector(".tr-out"),det=body.querySelector(".tr-det");
   body.querySelector(".tr-go").addEventListener("click",function(){
     var t=src.value.trim();if(!t)return;
-    var sel=body.querySelector(".tr-src-l").value;
-    var lang=sel==="auto"?detectLang(t):sel;
+    var sel=body.querySelector(".tr-src-l").value,lang=sel==="auto"?detectLang(t):sel;
     det.textContent="langue détectée : "+lang;
     var tgt=trGet("target","fr");if(tgt===lang)tgt=(lang==="fr"?"en":"fr");
     out.textContent="…";
-    translateText(t,lang,tgt).then(function(r){out.textContent=r;announce("Traduction affichée")})
-      .catch(function(e){out.textContent="Erreur : "+e.message+". Vérifiez la connexion, ou configurez un fournisseur dans /app."});
+    translateText(t,lang,tgt).then(function(r){out.textContent=r;histPush(t,r,lang);announce("Traduction affichée")})
+      .catch(function(e){out.textContent="Erreur : "+e.message+". Fournisseur réglable dans /app."});
   });
-  body.querySelector(".tr-copy").addEventListener("click",function(){
-    if(navigator.clipboard)navigator.clipboard.writeText(out.textContent);
-    announce("Traduction copiée");
-  });
+  body.querySelector(".tr-copy").addEventListener("click",function(){if(navigator.clipboard)navigator.clipboard.writeText(out.textContent);announce("Traduction copiée")});
   body.querySelector(".tr-speak").addEventListener("click",function(){speak(out.textContent)});
 }
-
-var VO_HTML='<div class="vo"><button class="vo-go" type="button">🎙 Écouter</button>'
-  +'<span class="vo-src"></span><div class="vo-out" aria-live="polite"></div>'
-  +'<div class="vo-bar"><button class="vo-stop" type="button">■ Stop</button>'
-  +'<label>Vitesse <input class="vo-rate" type="range" min="0.5" max="2" step="0.1" value="1"></label></div>'
-  +'<div class="vo-note"></div></div>';
-
+var VO_HTML='<div class="vo"><button class="vo-go" type="button">🎙 Écouter</button><span class="vo-src"></span>'
+ +'<div class="vo-out" aria-live="polite"></div>'
+ +'<div class="vo-bar"><button class="vo-stop" type="button">■ Stop</button><label>Vitesse <input class="vo-rate" type="range" min="0.5" max="2" step="0.1" value="1"></label></div>'
+ +'<div class="vo-note"></div></div>';
 function wireVo(body){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   var note=body.querySelector(".vo-note"),srcEl=body.querySelector(".vo-src"),out=body.querySelector(".vo-out"),go=body.querySelector(".vo-go");
-  if(!SR)note.textContent="Reconnaissance vocale absente de ce navigateur (Chrome la fournit). La synthèse vocale, elle, reste disponible via 🔊.";
+  if(!SR)note.textContent="Reconnaissance vocale absente de ce navigateur (Chrome la fournit).";
   var rec=null;
-  function pipeline(s){
-    var lang=detectLang(s);var tgt=trGet("target","fr");if(tgt===lang)tgt=(lang==="fr"?"en":"fr");
-    out.textContent="…";
-    translateText(s,lang,tgt).then(function(r){out.textContent=r;speak(r);announce("Traduction vocale prête")})
-      .catch(function(e){out.textContent="Erreur : "+e.message});
-  }
   go.addEventListener("click",function(){
     if(!SR){announce("Reconnaissance vocale non prise en charge ici");return}
     if(rec){rec.stop();return}
     rec=new SR();rec.lang=navigator.language||"fr-FR";rec.interimResults=true;
-    rec.onresult=function(e){
-      var s="";for(var i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;
-      srcEl.textContent=s;
-      if(e.results[e.results.length-1].isFinal)pipeline(s);
-    };
+    rec.onresult=function(e){var s="";for(var i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;srcEl.textContent=s;
+      if(e.results[e.results.length-1].isFinal){
+        var lang=detectLang(s),tgt=trGet("target","fr");if(tgt===lang)tgt=(lang==="fr"?"en":"fr");
+        out.textContent="…";
+        translateText(s,lang,tgt).then(function(r){out.textContent=r;histPush(s,r,lang);speak(r);publishSubs(s,r)})
+          .catch(function(er){out.textContent="Erreur : "+er.message});
+      }};
     rec.onend=function(){rec=null;go.textContent="🎙 Écouter"};
-    rec.start();go.textContent="■ Arrêter";announce("Écoute en cours");
+    rec.start();go.textContent="■ Arrêter";
   });
-  body.querySelector(".vo-stop").addEventListener("click",function(){
-    if(window.speechSynthesis)window.speechSynthesis.cancel();
-    if(rec)rec.stop();
-  });
+  body.querySelector(".vo-stop").addEventListener("click",function(){if(window.speechSynthesis)window.speechSynthesis.cancel();if(rec)rec.stop()});
   var rate=body.querySelector(".vo-rate");rate.value=trGet("rate","1");
   rate.addEventListener("input",function(){trSet("rate",rate.value)});
 }
-function render(){
-  SCREEN.innerHTML="";
-  if(!state.widgets.length){
-    var e=document.createElement("div");
-    e.id="empty";
-    e.innerHTML='<button type="button" aria-label="Ajouter un widget">+</button><span>Aucun widget.<br>Touchez + pour créer le premier.</span>';
-    e.querySelector("button").addEventListener("click",function(){addWidget();});
-    SCREEN.appendChild(e);
-    return;
+
+/* --- sous-titres flottants --- */
+function publishSubs(s,t){
+  document.getElementById("vsub-s").textContent=s;
+  document.getElementById("vsub-t").textContent=t;
+  if(trGet("subsbar","1")==="1"){
+    document.getElementById("sb-s").textContent=s;
+    document.getElementById("sb-t").textContent=t;
+    document.getElementById("subsbar").hidden=false;
   }
-  state.widgets.forEach(function(w,i){
-    var el=document.createElement("section");
-    el.className="w";
-    el.setAttribute("aria-label","Widget "+(i+1));
-    el.innerHTML=widgetBar(i)
-      +'<div class="emb" hidden><button class="back" type="button" aria-label="Retour à la liste des applications">←</button><span class="n"></span><a class="out" target="_blank" rel="noopener" aria-label="Ouvrir dans un nouvel onglet">↗</a></div>'
-      +'<div class="body"></div>';
-    el.querySelector(".minus").addEventListener("click",function(){removeWidget(i)});
-    el.querySelector(".plus").addEventListener("click",function(){addWidget()});
-    el.querySelector(".appcmd").addEventListener("click",function(){openSheet()});
-    el.querySelector(".back").addEventListener("click",function(){w.app=null;save();paintWidget(w,el,i);announce("Retour à la liste des applications")});
-    el.querySelector(".body").addEventListener("click",function(ev){
-      var b=ev.target.closest("button[data-i]");
-      if(!b)return;
-      w.app=+b.getAttribute("data-i");save();paintWidget(w,el,i);
-      announce(state.catalog[w.app].n+" ouvert dans le widget "+(i+1));
-    });
-    paintWidget(w,el,i);
-    SCREEN.appendChild(el);
-  });
-}
-function addWidget(){
-  if(state.widgets.length>=MAX){announce("Maximum "+MAX+" widgets");return}
-  state.widgets.push({app:null});save();render();
-  announce("Widget ajouté : "+state.widgets.length);
-}
-function removeWidget(i){
-  state.widgets.splice(i,1);save();render();
-  announce("Widget retiré. Il en reste "+state.widgets.length);
 }
 
-/* --- Panneau /app -------------------------------------------------------
-   Présent sur chaque widget, il ajoute ou retire des applications
-   accessibles à l'affichage de TOUS les widgets. */
+/* --- fenêtres simultanées (4 zones) --- */
+var WGRID=document.getElementById("wingrid");
+function renderWindows(){
+  WGRID.innerHTML="";
+  state.windows.forEach(function(w,i){
+    var el=document.createElement("div");
+    el.className="win"+(w.min?" min":"");
+    var a=w.app===null?null:state.catalog[w.app];
+    el.innerHTML='<div class="wbar"><span class="wt">'+(a?esc((a.g?a.g+" ":"")+a.n):"Choisir une application")+'</span>'
+      +'<button class="wmin" type="button" aria-label="Minimiser">−</button>'
+      +'<button class="wcl" type="button" aria-label="Fermer">×</button></div>'
+      +'<div class="emb" hidden><button class="back" type="button" aria-label="Retour à la liste">←</button><span class="n"></span><a class="out" target="_blank" rel="noopener" aria-label="Ouvrir dans un onglet">↗</a></div>'
+      +'<div class="wbody"></div>';
+    var body=el.querySelector(".wbody"),emb=el.querySelector(".emb");
+    function paint(){
+      var ap=w.app===null?null:state.catalog[w.app];
+      el.querySelector(".wt").textContent=ap?(ap.g?ap.g+" ":"")+ap.n:"Choisir une application";
+      if(!ap){emb.hidden=true;
+        var h='<div class="pick">';
+        state.catalog.forEach(function(c,k){h+='<button type="button" data-i="'+k+'"><b>'+esc(c.g||"•")+'</b>'+esc(c.n)+'</button>'});
+        body.innerHTML=h+'</div>';
+      }else if(ap.u==="@built:translate"){
+        emb.hidden=false;emb.querySelector(".n").textContent=ap.n;emb.querySelector(".out").style.display="none";
+        body.innerHTML=TR_HTML;wireTr(body);
+      }else if(ap.u==="@built:voice"){
+        emb.hidden=false;emb.querySelector(".n").textContent=ap.n;emb.querySelector(".out").style.display="none";
+        body.innerHTML=VO_HTML;wireVo(body);
+      }else{
+        emb.hidden=false;emb.querySelector(".n").textContent=ap.n;emb.querySelector(".out").style.display="";
+        emb.querySelector(".out").setAttribute("href",ap.u);
+        body.innerHTML='<iframe src="'+esc(ap.u)+'" title="'+esc(ap.n)+'" loading="lazy"></iframe>';
+      }
+    }
+    paint();
+    el.querySelector(".wmin").addEventListener("click",function(){w.min=!w.min;el.classList.toggle("min",w.min);save()});
+    el.querySelector(".wcl").addEventListener("click",function(){state.windows.splice(i,1);save();renderWindows();announce("Fenêtre fermée")});
+    el.querySelector(".back").addEventListener("click",function(){w.app=null;save();paint()});
+    body.addEventListener("click",function(ev){
+      var b=ev.target.closest("button[data-i]");if(!b)return;
+      w.app=+b.getAttribute("data-i");save();paint();
+    });
+    WGRID.appendChild(el);
+  });
+  if(state.windows.length<4){
+    var add=document.createElement("button");
+    add.id="wadd";add.type="button";add.setAttribute("aria-label","Ajouter une fenêtre");add.textContent="+";
+    add.addEventListener("click",function(){state.windows.push({app:null,min:false});save();renderWindows();announce("Fenêtre ajoutée")});
+    WGRID.appendChild(add);
+  }
+}
+
+/* --- navigation entre vues --- */
+function view(v){
+  document.querySelectorAll("#views section").forEach(function(s){s.classList.toggle("on",s.id==="v-"+v)});
+  document.querySelectorAll("#bnav button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-v")===v)});
+  document.getElementById("dockmenu").hidden=true;
+  if(v==="hist")paintHist();
+  if(v==="voix")paintVoice();
+}
+document.querySelectorAll("#tiles .tile").forEach(function(t){t.addEventListener("click",function(){view(t.getAttribute("data-v"))})});
+document.querySelectorAll("#bnav button").forEach(function(b){b.addEventListener("click",function(){view(b.getAttribute("data-v"))})});
+
+/* --- dock latéral --- */
+var DOCK=document.getElementById("dock"),DMENU=document.getElementById("dockmenu");
+function paintDock(){
+  DOCK.innerHTML="";
+  state.catalog.slice(0,6).forEach(function(a,k){
+    var b=document.createElement("button");
+    b.type="button";b.textContent=a.g||"•";b.setAttribute("aria-label",a.n);
+    b.addEventListener("click",function(){
+      var empty=state.windows.findIndex(function(w){return w.app===null});
+      if(empty<0&&state.windows.length<4){state.windows.push({app:null,min:false});empty=state.windows.length-1}
+      if(empty>=0){state.windows[empty].app=state.catalog.indexOf(a);save();renderWindows()}
+      view("fenetres");announce(a.n+" ouvert dans une fenêtre");
+    });
+    DOCK.appendChild(b);
+  });
+  var more=document.createElement("button");
+  more.type="button";more.textContent="⋯";more.setAttribute("aria-label","Menu de la barre latérale");
+  more.addEventListener("click",function(){DMENU.hidden=!DMENU.hidden});
+  DOCK.appendChild(more);
+}
+DMENU.addEventListener("click",function(ev){
+  var b=ev.target.closest("button[data-act]");if(!b)return;
+  var act=b.getAttribute("data-act");
+  if(act==="apps")openSheet();
+  else if(act==="hide"){DOCK.hidden=true;trSet("dock","0");syncDockSw();announce("Barre latérale masquée")}
+  else view(act);
+  DMENU.hidden=true;
+});
+document.getElementById("dockhandle").addEventListener("click",function(){
+  DOCK.hidden=!DOCK.hidden;trSet("dock",DOCK.hidden?"0":"1");syncDockSw();
+});
+function syncDockSw(){document.getElementById("sw-dock").classList.toggle("on",!DOCK.hidden)}
+
+/* --- vue voix : assistant, sous-titres, doublage --- */
+var spoken=[],spkIdx=-1,SRg=window.SpeechRecognition||window.webkitSpeechRecognition,recG=null;
+(function(){for(var i=0;i<24;i++)document.getElementById("wave").appendChild(document.createElement("span"))})();
+function paintVoice(){
+  document.getElementById("vpair").innerHTML=flag(trGet("vsrc","en"))+" "+(trGet("vsrc","en")==="auto"?"auto":trGet("vsrc","en").toUpperCase())
+    +' <span style="color:var(--acc1)">→</span> '+flag(trGet("target","fr"))+" "+trGet("target","fr").toUpperCase();
+  document.getElementById("pspeed").textContent=(parseFloat(trGet("rate","1"))||1).toFixed(1)+"x";
+  document.getElementById("pvoice").classList.toggle("off",trGet("tts","1")!=="1");
+  document.getElementById("psubs").classList.toggle("off",trGet("subsbar","1")!=="1");
+}
+document.getElementById("mic").addEventListener("click",function(){
+  if(!SRg){announce("Reconnaissance vocale non prise en charge par ce navigateur");
+    document.getElementById("vstatus").textContent="Reconnaissance absente de ce navigateur : Chrome la fournit.";return}
+  if(recG){recG.stop();return}
+  var mic=document.getElementById("mic");
+  recG=new SRg();recG.lang=(trGet("vsrc","auto")!=="auto"?trGet("vsrc","en"):((navigator.language||"fr-FR")));
+  recG.interimResults=true;
+  recG.onresult=function(e){
+    var s="";for(var i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;
+    document.getElementById("vsub-s").textContent=s;
+    if(e.results[e.results.length-1].isFinal)voicePipeline(s);
+  };
+  recG.onend=function(){recG=null;mic.classList.remove("live");document.getElementById("wave").classList.remove("live");
+    document.getElementById("vstatus").textContent="Parlez maintenant…"};
+  recG.start();mic.classList.add("live");document.getElementById("wave").classList.add("live");
+  document.getElementById("vstatus").textContent="Écoute en cours…";announce("Écoute en cours");
+});
+function voicePipeline(s){
+  var lang=detectLang(s),tgt=trGet("target","fr");if(tgt===lang)tgt=(lang==="fr"?"en":"fr");
+  document.getElementById("vstatus").textContent="Traduction de « "+lang+" » vers « "+tgt+" »…";
+  translateText(s,lang,tgt).then(function(r){
+    document.getElementById("vsub-s").textContent=s;
+    document.getElementById("vsub-t").textContent=r;
+    publishSubs(s,r);histPush(s,r,lang);
+    spoken.push({s:s,t:r});spkIdx=spoken.length-1;
+    document.getElementById("ptitle").textContent="Doublage vocal — segment "+spoken.length;
+    document.getElementById("psubtitle").textContent=r.slice(0,60);
+    speak(r);announce("Traduction vocale prête");
+  }).catch(function(e){document.getElementById("vstatus").textContent="Erreur : "+e.message});
+}
+document.getElementById("vstop").addEventListener("click",function(){
+  if(recG)recG.stop();
+  if(window.speechSynthesis)window.speechSynthesis.cancel();
+  document.getElementById("subsbar").hidden=true;
+  announce("Arrêté");
+});
+document.getElementById("pplay").addEventListener("click",function(){
+  if(!spoken.length){announce("Aucun segment à écouter");return}
+  if(spkIdx<0)spkIdx=0;
+  speak(spoken[spkIdx].t);
+  document.getElementById("psubtitle").textContent=spoken[spkIdx].t.slice(0,60);
+});
+document.getElementById("pprev").addEventListener("click",function(){if(spkIdx>0){spkIdx--;speak(spoken[spkIdx].t)}});
+document.getElementById("pnext").addEventListener("click",function(){if(spkIdx<spoken.length-1){spkIdx++;speak(spoken[spkIdx].t)}});
+document.getElementById("pspeed").addEventListener("click",function(){
+  var r=[0.75,1,1.25,1.5],cur=parseFloat(trGet("rate","1"))||1;
+  var nx=r[(r.indexOf(cur)+1)%r.length]||1;
+  trSet("rate",String(nx));this.textContent=(nx%1===0?nx.toFixed(1):String(nx))+"x";
+});
+document.getElementById("pvoice").addEventListener("click",function(){
+  trSet("tts",trGet("tts","1")==="1"?"0":"1");paintVoice();announce(trGet("tts","1")==="1"?"Voix activée":"Voix coupée");
+});
+document.getElementById("psubs").addEventListener("click",function(){
+  var on=trGet("subsbar","1")==="1";trSet("subsbar",on?"0":"1");
+  if(on)document.getElementById("subsbar").hidden=true;
+  paintVoice();
+});
+
+/* --- vue traduction --- */
+var TIN=document.getElementById("tin"),TOUT=document.getElementById("tout");
+document.getElementById("tgo").addEventListener("click",function(){
+  var t=TIN.value.trim();if(!t)return;
+  var src=document.getElementById("tsrc").value,tgt=document.getElementById("ttgt").value;
+  var lang=src==="auto"?detectLang(t):src;
+  document.getElementById("tdet").textContent="langue détectée : "+lang+(src==="auto"?" (automatique)":"");
+  if(tgt===lang)tgt=(lang==="fr"?"en":"fr");
+  TOUT.textContent="…";
+  translateText(t,lang,tgt).then(function(r){TOUT.textContent=r;histPush(t,r,lang);announce("Traduction affichée")})
+    .catch(function(e){TOUT.textContent="Erreur : "+e.message});
+});
+document.getElementById("tclear").addEventListener("click",function(){TIN.value="";TOUT.textContent="";document.getElementById("tdet").textContent=""});
+document.getElementById("tcopy").addEventListener("click",function(){if(navigator.clipboard)navigator.clipboard.writeText(TOUT.textContent);announce("Copié")});
+document.getElementById("tshare").addEventListener("click",function(){
+  if(navigator.share)navigator.share({text:TOUT.textContent}).catch(function(){});
+  else if(navigator.clipboard){navigator.clipboard.writeText(TOUT.textContent);announce("Partage absent : copié")}
+});
+document.getElementById("ttgt").value=trGet("target","fr");
+document.getElementById("ttgt").addEventListener("change",function(){trSet("target",this.value);announce("Cible : "+this.value)});
+document.getElementById("fab").addEventListener("click",function(){
+  var s=document.getElementById("tsrc"),t=document.getElementById("ttgt");
+  if(s.value==="auto")s.value=t.value,t.value=(t.value==="fr"?"en":"fr");
+  else{var tmp=s.value;s.value=t.value;t.value=tmp}
+  trSet("target",t.value);announce("Langues inversées");
+});
+
+/* --- paramètres --- */
+function swBind(id,key,after,def){
+  var el=document.getElementById(id),d=def||"0";
+  el.classList.toggle("on",trGet(key,d)==="1");
+  el.addEventListener("click",function(){
+    var on=trGet(key,d)==="1";trSet(key,on?"0":"1");el.classList.toggle("on",!on);
+    if(after)after(!on);announce((!on?"Activé : ":"Désactivé : ")+el.getAttribute("aria-label"));
+  });
+  return el;
+}
+swBind("sw-off","offline");
+swBind("sw-eco","eco");
+swBind("sw-strict","strict");
+swBind("sw-dark","dark",function(on){applyTheme(on?"dark":"light")},"1");   // sombre par défaut
+document.getElementById("row-lang").addEventListener("click",function(){
+  var d=document.getElementById("langdet");d.hidden=!d.hidden;
+});
+document.getElementById("p-tgt").addEventListener("change",function(){
+  trSet("target",this.value);document.getElementById("ttgt").value=this.value;
+  document.getElementById("langsum").textContent="Cible : "+this.value.toUpperCase();paintVoice();
+});
+document.getElementById("p-src").addEventListener("change",function(){trSet("vsrc",this.value);paintVoice()});
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme",t);
+  document.getElementById("sw-dark").classList.toggle("on",t==="dark");
+  document.getElementById("theme").textContent=t==="dark"?"🌙":"☀️";
+}
+applyTheme(trGet("dark","1")==="1"?"dark":"light");
+
+/* --- plus --- */
+document.getElementById("p-apps").addEventListener("click",openSheet);
+document.getElementById("p-install").addEventListener("click",askInstall);
+swBind("sw-dock","dock",function(on){DOCK.hidden=!on});
+syncDockSw();
+document.getElementById("hclear").addEventListener("click",function(){
+  try{localStorage.removeItem("mw.hist")}catch(e){}
+  paintHist();announce("Historique supprimé");
+});
+
+/* --- panneau /app --- */
+var SHEET=document.getElementById("sheet"),SHL=document.getElementById("shl");
 function paintSheet(){
   var h="";
   state.catalog.forEach(function(a,k){
     h+='<div class="row"><b>'+esc(a.g||"•")+'</b><span class="rn">'+esc(a.n)+'</span><span class="ru">'+esc(a.u)+'</span>'
       +'<button type="button" data-del="'+k+'" aria-label="Retirer '+esc(a.n)+'">×</button></div>';
   });
-  if(!state.catalog.length)h='<div class="row"><span class="ru">Aucune application pour l’instant.</span></div>';
   SHL.innerHTML=h;
 }
 function openSheet(){
   paintSheet();SHEET.hidden=false;
-  /* Réglages traduction & voix : rechargés à chaque ouverture du panneau. */
   document.getElementById("s-prov").value=trGet("provider","mymemory");
   document.getElementById("s-url").value=trGet("libre_url","");
   document.getElementById("s-key").value=trGet("libre_key","");
-  document.getElementById("s-tgt").value=trGet("target","fr");
   document.getElementById("shc").focus();
   announce("Panneau /app ouvert : "+state.catalog.length+" applications");
 }
-/* Réglages traduction & voix : persistés dès la saisie, stockage local privé. */
-document.getElementById("s-prov").addEventListener("change",function(){trSet("provider",this.value);announce("Fournisseur : "+this.value)});
-document.getElementById("s-url").addEventListener("change",function(){trSet("libre_url",this.value)});
-document.getElementById("s-key").addEventListener("change",function(){trSet("libre_key",this.value)});
-document.getElementById("s-tgt").addEventListener("change",function(){trSet("target",this.value);announce("Langue cible : "+this.value)});
 document.getElementById("shc").addEventListener("click",function(){SHEET.hidden=true});
 SHL.addEventListener("click",function(ev){
-  var b=ev.target.closest("button[data-del]");
-  if(!b)return;
+  var b=ev.target.closest("button[data-del]");if(!b)return;
   var k=+b.getAttribute("data-del"),name=state.catalog[k].n;
   state.catalog.splice(k,1);
-  state.widgets.forEach(function(w){if(w.app===k)w.app=null;else if(w.app>k)w.app--});
-  save();paintSheet();render();
-  announce(name+" retiré de tous les widgets");
+  state.windows.forEach(function(w){if(w.app===k)w.app=null;else if(w.app>k)w.app--});
+  save();paintSheet();paintDock();renderWindows();announce(name+" retiré");
 });
 document.getElementById("shf").addEventListener("submit",function(ev){
   ev.preventDefault();
-  var g=document.getElementById("f-g").value.trim();
-  var n=document.getElementById("f-n").value.trim();
-  var u=document.getElementById("f-u").value.trim();
+  var g=document.getElementById("f-g").value.trim(),n=document.getElementById("f-n").value.trim(),u=document.getElementById("f-u").value.trim();
   if(!n||!u)return;
-  if(!/^https?:\/\//i.test(u))u="https://"+u;   /* tolère « deezer.com » */
-  state.catalog.push({g:g,n:n,u:u});
-  save();paintSheet();render();
+  if(!/^https?:\/\//i.test(u))u="https://"+u;
+  state.catalog.push({g:g,n:n,u:u});save();paintSheet();paintDock();renderWindows();
   document.getElementById("f-g").value="";document.getElementById("f-n").value="";document.getElementById("f-u").value="";
-  announce(n+" ajouté à tous les widgets");
+  announce(n+" ajouté à toutes les fenêtres");
+});
+document.getElementById("s-prov").addEventListener("change",function(){trSet("provider",this.value)});
+document.getElementById("s-url").addEventListener("change",function(){trSet("libre_url",this.value)});
+document.getElementById("s-key").addEventListener("change",function(){trSet("libre_key",this.value)});
+document.getElementById("theme").addEventListener("click",function(){
+  var t=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";
+  trSet("dark",t==="dark"?"1":"0");applyTheme(t);
 });
 
-/* --- Thème ------------------------------------------------------------- */
-var THEME=document.getElementById("theme");
-function readTheme(){try{return localStorage.getItem(THEME_KEY)}catch(e){return null}}
-function paintTheme(){
-  var t=readTheme();
-  var dark=t==="dark"||(!t&&window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches);
-  THEME.textContent=dark?"☀️ Clair":"🌙 Sombre";
-  THEME.setAttribute("aria-pressed",dark?"true":"false");
-}
-THEME.addEventListener("click",function(){
-  var cur=document.documentElement.getAttribute("data-theme"),dark;
-  if(cur)dark=cur!=="dark";
-  else dark=!(window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches);
-  try{localStorage.setItem(THEME_KEY,dark?"dark":"light")}catch(e){}
-  document.documentElement.setAttribute("data-theme",dark?"dark":"light");
-  paintTheme();announce(dark?"Thème sombre":"Thème clair");
-});
-if(readTheme())document.documentElement.setAttribute("data-theme",readTheme());
-paintTheme();
-if(window.matchMedia)try{
-  window.matchMedia("(prefers-color-scheme:dark)").addEventListener("change",function(){if(!readTheme())paintTheme()});
-}catch(e){}
-
-/* --- Installation -------------------------------------------------------
-   Chrome émet beforeinstallprompt quand le site respecte ses critères
-   (HTTPS, manifeste, service worker). On l'intercepte : notre bandeau
-   propose l'installation, et l'icône installée exécute directement le
-   premier widget au prochain clic. */
+/* --- installation (invite Chrome) --- */
 var IB=document.getElementById("installbar"),IBY=document.getElementById("iby"),IBN=document.getElementById("ibn"),INST=document.getElementById("inst"),deferredPrompt=null,installSeen=false;
 function isInstalled(){
-  return (window.matchMedia&&(window.matchMedia("(display-mode: standalone)").matches||window.matchMedia("(display-mode: fullscreen)").matches))
-    ||navigator.standalone===true;
+  return (window.matchMedia&&(window.matchMedia("(display-mode: standalone)").matches||window.matchMedia("(display-mode: fullscreen)").matches))||navigator.standalone===true;
 }
-function refreshInstallUI(){
-  INST.hidden=isInstalled()||!installSeen;
-  if(isInstalled())IB.hidden=true;
-}
+function refreshInstallUI(){INST.hidden=isInstalled()||!installSeen;if(isInstalled())IB.hidden=true}
 function askInstall(){
   if(!deferredPrompt){announce("Menu ⋮ de Chrome puis « Installer l'application ».");return}
-  var p=deferredPrompt;deferredPrompt=null;
-  p.prompt();
-  p.userChoice.then(function(c){
-    announce(c.outcome==="accepted"?"Installation acceptée":"Installation reportée");
-    IB.hidden=true;refreshInstallUI();
-  });
+  var p=deferredPrompt;deferredPrompt=null;p.prompt();
+  p.userChoice.then(function(c){announce(c.outcome==="accepted"?"Installation acceptée":"Installation reportée");IB.hidden=true;refreshInstallUI()});
 }
 window.addEventListener("beforeinstallprompt",function(e){
   e.preventDefault();deferredPrompt=e;installSeen=true;
-  if(!isInstalled())IB.hidden=false;
-  refreshInstallUI();announce("Application prête à être installée");
+  if(!isInstalled())IB.hidden=false;refreshInstallUI();announce("Application prête à être installée");
 });
-window.addEventListener("appinstalled",function(){
-  deferredPrompt=null;installSeen=false;IB.hidden=true;refreshInstallUI();
-  announce("Application installée sur l'appareil");
-});
-IBY.addEventListener("click",askInstall);
-INST.addEventListener("click",askInstall);
+window.addEventListener("appinstalled",function(){deferredPrompt=null;installSeen=false;IB.hidden=true;refreshInstallUI();announce("Application installée")});
+IBY.addEventListener("click",askInstall);INST.addEventListener("click",askInstall);
 IBN.addEventListener("click",function(){IB.hidden=true;announce("Installation reportée")});
-if(!isInstalled()&&!("onbeforeinstallprompt" in window)&&/iPhone|iPad|iPod/.test(navigator.userAgent)){
-  document.getElementById("ibm").textContent="Sur iPhone ou iPad : bouton Partager, puis « Sur l'écran d'accueil ».";
-  IBY.hidden=true;IBN.textContent="Fermer";IB.hidden=false;
-}
 if(isInstalled()){IB.hidden=true;INST.hidden=true}
 
-/* --- Démarrage : exécute le premier widget, rien d'autre ----------------
-   Premier lancement (rien de sauvegardé) : un widget est créé.
-   L'utilisateur a retiré tous ses widgets : l'écran vide avec + est
-   respecté, tel quel. */
-state=load();
-if(!state)state={widgets:[{app:null}],catalog:defaults()};
-render();
+/* --- démarrage --- */
+state=load()||{windows:[{app:null,min:false}],catalog:defaults()};
+if(!state.windows.length)state.windows.push({app:null,min:false});
+DOCK.hidden=trGet("dock","1")!=="1";
+renderWindows();paintDock();paintVoice();paintHist();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
 </script>
 </body>
