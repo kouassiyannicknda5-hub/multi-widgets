@@ -6,7 +6,7 @@ tests en CI ; rien n'est promis sans capacité vérifiée sur l'appareil.
 ## TERMINÉ (compilé, testé en CI, artefact APK produit)
 - Projet Android multi-modules Kotlin (app, core, multitasking, ai), Compose + Material 3, SDK 35, minSdk 26.
 - 15 écrans Compose : démarrage, tableau de bord, barre latérale, fenêtres, lanceur, traducteurs texte/écran/vocal, sous-titres, langues, modèles, confidentialité, performance, appareil, historique.
-- Barre latérale flottante : poignée de bord, bouton ☰ déplaçable, recherche d'applications, accès dispositions/paramètres.
+- Barre latérale flottante **hors de l'application** : service au premier plan (type `specialUse`, Android 14+) avec notification permanente — elle reste affichée par-dessus les autres applications même quand Multi-widgets est quitté. Poignée de bord, bouton ☰ déplaçable, recherche d'applications, accès dispositions/paramètres. Autorisations demandées à l'écran « Barre latérale » : superposition (`SYSTEM_ALERT_WINDOW`) puis notifications (Android 13+), chacune expliquée avant la demande système.
 - Dispositions natives : 1 app ; 2 côte à côte ; 2 superposées (écran partagé Android 7+) ; 3/4/6 zones **uniquement si le firmware fournit les fenêtres libres**, sinon panneau flottant de secours avec explication.
 - Widget d'écran d'accueil natif 8 cases : un toucher ouvre le site, l'application ne s'ouvre jamais.
 - OCR local ML Kit : latin, chinois, japonais, coréen, devanagari ; architecture multi-moteurs.
@@ -18,7 +18,7 @@ tests en CI ; rien n'est promis sans capacité vérifiée sur l'appareil.
 - TTS Android : genre proposé **seulement si le moteur installé le fournit**, vitesse, interruption.
 - Sous-titres : file bornée à 12 segments, copie par appui long, décalage réglable.
 - Historique facultatif, désactivé par défaut, supprimable, borné.
-- Confidentialité : permissions au bon moment avec explication, aucun service d'accessibilité, aucune capture secrète, rappel notification pendant la capture.
+- Confidentialité : permissions au bon moment avec explication (superposition, notifications, micro, MediaProjection), aucun service d'accessibilité, aucune capture secrète, rappel notification permanent pour la barre latérale et pendant la capture.
 - Optimisations RAM : un modèle à la fois, libération après traitement, langues à la demande, rien sur le thread principal, mode économie.
 - Tests unitaires JVM : routeur (9), corps de requête cloud (2), file de sous-titres (2). CI : compilation + tests + APK.
 - Documentation : BUILD, INSTALL, API-CONFIG, ce rapport.

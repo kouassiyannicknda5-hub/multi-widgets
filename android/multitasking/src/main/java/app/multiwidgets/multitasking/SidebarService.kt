@@ -1,8 +1,14 @@
 package app.multiwidgets.multitasking
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
+import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
 import android.view.MotionEvent
@@ -40,6 +46,54 @@ class SidebarService : Service() {
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
         poserPoignee()
         poserBouton()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == QUITTER) { stopSelf(); return START_NOT_STICKY }
+        demarrerRappel()
+        return START_STICKY
+    }
+
+    /**
+     * Service au premier plan : c'est ce qui permet à la barre de rester
+     * affichée par-dessus les autres applications quand l'utilisateur quitte
+     * Multi-widgets. Depuis Android 14, une superposition de ce type doit
+     * déclarer le type « specialUse » et l'application doit demander
+     * l'autorisation de notifications pour que le rappel soit visible.
+     */
+    private fun demarrerRappel() {
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(
+            NotificationChannel(CANAL, "Barre latérale", NotificationManager.IMPORTANCE_LOW)
+        )
+        val ouvrir = packageManager.getLaunchIntentForPackage(packageName)
+            ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val builder = Notification.Builder(this, CANAL)
+            .setContentTitle("Barre latérale Multi-widgets")
+            .setContentText("Flotte par-dessus vos applications. Touchez pour ouvrir.")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setOngoing(true)
+        if (ouvrir != null) {
+            builder.setContentIntent(
+                PendingIntent.getActivity(this, 0, ouvrir, PendingIntent.FLAG_IMMUTABLE)
+            )
+        }
+        builder.addAction(
+            Notification.Action.Builder(
+                android.R.drawable.ic_dialog_info, "Quitter",
+                PendingIntent.getService(
+                    this, 1,
+                    Intent(this, SidebarService::class.java).setAction(QUITTER),
+                    PendingIntent.FLAG_IMMUTABLE
+                )
+            ).build()
+        )
+        val n = builder.build()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(NOTIF_ID, n)
+        }
     }
 
     override fun onDestroy() {
@@ -170,5 +224,8 @@ class SidebarService : Service() {
     private companion object {
         const val WRAP = WindowManager.LayoutParams.WRAP_CONTENT
         const val MATCH = WindowManager.LayoutParams.MATCH_PARENT
+        const val CANAL = "barre"
+        const val NOTIF_ID = 42
+        const val QUITTER = "app.multiwidgets.multitasking.action.QUITTER"
     }
 }

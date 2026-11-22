@@ -120,6 +120,11 @@ fun EcranBarreLaterale() {
     val demande = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         accord = Permissions.overlayGranted(ctx)
     }
+    var notifs by remember { mutableStateOf(Permissions.notificationsGranted(ctx)) }
+    var expliquerNotif by remember { mutableStateOf(false) }
+    val demandeNotif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        notifs = Permissions.notificationsGranted(ctx)
+    }
     Page("Barre latérale") { pv ->
         Column(Modifier.fillMaxSize().padding(pv).padding(16.dp), Arrangement.spacedBy(10.dp)) {
             Text("La barre latérale flotte par-dessus les autres applications : poignée au bord droit, bouton ☰ déplaçable, recherche d'applications, accès aux dispositions et aux paramètres.")
@@ -136,13 +141,34 @@ fun EcranBarreLaterale() {
             }
             Text(if (accord) "Autorisation de superposition : accordée." else "Autorisation de superposition : manquante.",
                 style = MaterialTheme.typography.bodySmall)
-            if (!accord) Button(onClick = { expliquer = true }) { Text("Comprendre et autoriser") }
+            if (!accord) Button(onClick = { expliquer = true }) { Text("Comprendre et autoriser la superposition") }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                Text(if (notifs) "Notifications : accordées." else "Notifications : manquantes — la barre tournera, mais son rappel permanent sera masqué.", style = MaterialTheme.typography.bodySmall)
+                if (!notifs) OutlinedButton(onClick = { expliquerNotif = true }) { Text("Autoriser les notifications") }
+            }
+            if (expliquerNotif) {
+                AlertDialog(
+                    onDismissRequest = { expliquerNotif = false },
+                    title = { Text("Rester visible hors de l'application") },
+                    text = { Text("Pour flotter par-dessus les autres applications même quand vous quittez Multi-widgets, la barre tourne comme service au premier plan et affiche une notification discrète. Android 13+ exige l'autorisation de notifications pour la rendre visible.") },
+                    confirmButton = { Button(onClick = { expliquerNotif = false; demandeNotif.launch(Permissions.NOTIF) }) { Text("Autoriser") } },
+                    dismissButton = { OutlinedButton(onClick = { expliquerNotif = false }) { Text("Plus tard") } },
+                )
+            }
             Button(
                 enabled = accord,
                 onClick = {
-                    if (active) ctx.stopService(Intent(ctx, SidebarService::class.java))
-                    else ctx.startService(Intent(ctx, SidebarService::class.java))
-                    active = !active
+                    if (active) {
+                        ctx.stopService(Intent(ctx, SidebarService::class.java))
+                        active = false
+                    } else {
+                        runCatching {
+                            androidx.core.content.ContextCompat.startForegroundService(
+                                ctx, Intent(ctx, SidebarService::class.java)
+                            )
+                        }
+                        active = true
+                    }
                 },
             ) { Text(if (active) "Arrêter la barre latérale" else "Lancer la barre latérale") }
             Text("Ouverture et fermeture par glissement sur la poignée orange ou par appui sur ☰ ; glisser ☰ le déplace.",
@@ -276,7 +302,7 @@ fun EcranTraducteurEcran() {
                 .putExtra(ScreenCaptureService.EXTRA_DATA, res.data)
             runCatching { androidx.core.content.ContextCompat.startForegroundService(ctx, i) }
                 .onFailure { message = "Démarrage refusé : ${it.message}" }
-            ctx.startService(Intent(ctx, SubtitleOverlayService::class.java))
+            runCatching { androidx.core.content.ContextCompat.startForegroundService(ctx, Intent(ctx, SubtitleOverlayService::class.java)) }
             active = true
             message = "Capture consentie active. Les fenêtres sécurisées (DRM, banques) restent noires : protection Android, pas un défaut."
         } else {
