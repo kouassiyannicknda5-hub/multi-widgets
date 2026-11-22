@@ -6,7 +6,6 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.view.View
 import android.widget.RemoteViews
 import app.multiwidgets.core.LauncherRepository
@@ -14,8 +13,8 @@ import app.multiwidgets.core.LauncherRepository
 /**
  * Widget d'écran d'accueil natif : dessiné par le lanceur Android, en dehors
  * de toute application ouverte. Un toucher sur une case OUVRE L'APPLICATION
- * NATIVE installée (pas un lien web) ; le lien ne sert que de repli si l'app
- * n'est pas installée. Multi-widgets ne s'ouvre jamais.
+ * NATIVE installée. AUCUN lien web : si l'application n'est pas installée, la
+ * case est simplement masquée. Multi-widgets ne s'ouvre jamais.
  */
 class Widgets : AppWidgetProvider() {
 
@@ -40,17 +39,17 @@ class Widgets : AppWidgetProvider() {
             val apps = Store.load(context)
             CELLES.forEachIndexed { i, id ->
                 val a = apps.getOrNull(i)
-                if (a != null && a.u.isNotEmpty()) {
+                val intent = if (a != null && a.paquet.isNotEmpty())
+                    LauncherRepository.launchIntent(context, a.paquet)
+                        ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                else null
+                if (a != null && intent != null) {
                     v.setViewVisibility(id, View.VISIBLE)
                     v.setTextViewText(id, "${if (a.g.isEmpty()) "•" else a.g}\n${a.n}")
-                    val natif = if (a.paquet.isNotEmpty())
-                        LauncherRepository.launchIntent(context, a.paquet) else null
-                    val it = (natif ?: Intent(Intent.ACTION_VIEW, Uri.parse(a.u)))
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     v.setOnClickPendingIntent(
                         id,
                         PendingIntent.getActivity(
-                            context, i, it,
+                            context, i, intent,
                             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                         )
                     )

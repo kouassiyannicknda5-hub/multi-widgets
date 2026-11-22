@@ -15,27 +15,30 @@ fond d'écran, pas d'étape intermédiaire.
   - **`/app`** ouvre le panneau des applications : ajoutez-en encore plus,
     retirez-en avec `×`. La commande est présente sur **tous** les widgets et
     ses changements s'appliquent à **tous** les widgets.
-- Quand une application est ouverte dans le widget : **`←`** revient à la
-  liste, **`↗`** ouvre l'application dans un onglet séparé.
+- Quand une application est ouverte dans la fenêtre : **`←`** revient à la
+  liste. Les entrées sont des **applications mobiles** : sur le web, un
+  navigateur ne peut pas les lancer, la fenêtre affiche un message honnête
+  (aucun lien ouvert) ; l'ouverture réelle se fait dans l'APK Android.
 - Tout est mémorisé : widgets, catalogue d'applications, application ouverte
   dans chaque widget, thème. Retirer tous les widgets laisse un écran vide
   avec un `+`, respecté tel quel au relancement.
 - Thème clair/sombre dans le panneau `/app` ; sans choix, suit le système.
 
 ## Ajouter une application (`/app`)
-1. Toucher `/app` sur n'importe quel widget.
-2. Renseigner un glyphe (facultatif, ex. 🎵), un nom, une adresse
-   (`deezer.com` suffit : `https://` est ajouté).
-3. « Ajouter à tous les widgets » : l'application apparaît immédiatement dans
-   l'affichage de chaque widget.
+1. Toucher `/app` (volet « Plus »).
+2. Renseigner un glyphe (facultatif, ex. 🎵), un nom, et le **paquet Android**
+   de l'application (facultatif sur le web). **Aucune adresse web** : ce sont
+   des applications mobiles, pas des liens.
+3. « Ajouter à toutes les fenêtres » : l'application apparaît immédiatement.
+   Dans l'APK Android, l'écran « Barre latérale » propose un **sélecteur de vos
+   applications installées** (avec recherche) — c'est là que vous ajoutez vos apps.
 
-## À savoir : sites qui refusent le cadre
-Beaucoup de grands sites (WhatsApp, Google, Facebook, Instagram…)
-**interdisent** d'être affichés dans un cadre, par en-tête
-`X-Frame-Options` ou CSP — c'est une décision de *leur* serveur, pas un
-défaut de Multi-Widgets. Le widget affiche alors leur message de refus ;
-la flèche **`↗`** ouvre l'application dans un onglet. Les sites qui
-autorisent l'intégration s'affichent normalement dans le widget.
+## À savoir : applications mobiles, pas de liens
+Multi-Widgets n'ouvre **aucun lien web** : les entrées du catalogue sont des
+**applications mobiles**. Dans un navigateur, il est impossible de lancer vos
+applications natives (sandbox) — la fenêtre affiche donc un message honnête et
+rien n'est ouvert. C'est dans l'**APK Android** que vos applications installées
+s'ouvrent directement (widget d'accueil et barre latérale), sans navigateur.
 
 ## Utiliser sur le téléphone
 1. Mettre le dossier sur un hébergement HTTPS (GitHub Pages, Render, Netlify…).
@@ -56,7 +59,7 @@ puis ouvrir http://localhost:8000.
 - `manifest.json` : métadonnées d'installation (icônes maskables)
 - `sw.js` : service worker — hors ligne et mises à jour réseau d'abord
 - `icons/` : icônes 192/512 et variantes maskables
-- `tests/smoke.js` : 33 assertions fonctionnelles (`npm install && npm test`)
+- `tests/smoke.js` : 48 assertions fonctionnelles (`npm install && npm test`)
 - `README.md` : documentation en anglais
 
 ## Licence
@@ -70,10 +73,10 @@ ne peut pas faire :
 
 - un **vrai widget Android** posé sur l'écran d'accueil (grille de 8 cases),
   vivant en dehors de toute application ouverte ;
-- **un toucher sur une case ouvre directement l'application** dans le
-  navigateur : Multi-Widgets ne s'ouvre jamais ;
-- l'application native ne sert qu'une fois, de `/app` natif : ajouter ou
-  retirer des applications ; le widget se redessine immédiatement.
+- **un toucher sur une case ouvre l'application native installée**, sans lien
+  web ni navigateur : Multi-Widgets ne s'ouvre jamais ;
+- ajout/retrait de vos applications installées depuis l'app (écran « Barre
+  latérale » ou `/app` natif) ; le widget et la barre se redessinent aussitôt.
 
 ### Obtenir l'APK sans installer Android Studio
 1. GitHub → onglet **Actions** → workflow **APK** → dernière exécution verte.

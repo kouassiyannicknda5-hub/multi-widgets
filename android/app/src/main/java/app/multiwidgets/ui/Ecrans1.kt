@@ -43,6 +43,8 @@ import app.multiwidgets.core.LauncherRepository
 import app.multiwidgets.core.Permissions
 import app.multiwidgets.multitasking.LayoutManager
 import app.multiwidgets.multitasking.SidebarService
+import app.multiwidgets.multitasking.Store
+import app.multiwidgets.multitasking.WidgetConfigActivity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -171,7 +173,29 @@ fun EcranBarreLaterale() {
                     }
                 },
             ) { Text(if (active) "Arrêter la barre latérale" else "Lancer la barre latérale") }
-            Text("Ouverture et fermeture par glissement sur la poignée orange ou par appui sur ☰ ; glisser ☰ le déplace.",
+            Text("Déplacez la barre par sa poignée ⠿ (position mémorisée). Le bouton ☰ liste toutes vos applications : toucher ouvre l'app, toucher longtemps l'épingle sur la barre.",
+                style = MaterialTheme.typography.bodySmall)
+
+            var maj by remember { mutableStateOf(0) }
+            Text("Applications de la barre et du widget", style = MaterialTheme.typography.titleSmall)
+            val natives = remember(maj) { Store.load(ctx).filter { it.paquet.isNotEmpty() } }
+            if (natives.isEmpty()) {
+                Text("Aucune application pour le moment. Ajoutez les vôtres ci-dessous — aucun lien web.",
+                    style = MaterialTheme.typography.bodySmall)
+            } else {
+                natives.forEach { a ->
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text((if (a.g.isEmpty()) "•" else a.g) + "  " + a.n, modifier = Modifier.weight(1f))
+                        OutlinedButton(onClick = {
+                            Store.save(ctx, Store.load(ctx).filter { it.paquet != a.paquet }); maj++
+                        }) { Text("Retirer") }
+                    }
+                }
+            }
+            Button(onClick = { runCatching { ctx.startActivity(Intent(ctx, WidgetConfigActivity::class.java)) } }) {
+                Text("➕ Ajouter une application du téléphone")
+            }
+            Text("Sélectionnez vos applications installées : elles s'ouvriront directement dans la barre et le widget, sans aucun lien web.",
                 style = MaterialTheme.typography.bodySmall)
         }
     }

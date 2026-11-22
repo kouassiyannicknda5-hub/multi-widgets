@@ -24,13 +24,14 @@
 ## Widget d'écran d'accueil
 Appui long sur l'écran d'accueil → **Widgets** → « Multi-widgets » → glisser.
 Chaque case ouvre **l'application native installée** directement, sans ouvrir
-Multi-widgets ni renvoyer vers un lien web (le lien ne sert que de repli si
-l'application n'est pas installée).
+Multi-widgets et **sans aucun lien web** : si l'application n'est pas installée,
+la case est simplement masquée.
 
-**Ajouter vos applications du téléphone** : tableau de bord → widget, ou
-l'activité de configuration `/app` → **« ➕ Ajouter une application du
-téléphone »** : un sélecteur liste toutes les applications installées avec
-recherche ; toucher une app l'ajoute au widget **et** à la barre latérale.
+**Ajouter vos applications du téléphone** : dans l'app, écran **« Barre
+latérale »** → section **« Applications de la barre et du widget »** →
+**« ➕ Ajouter une application du téléphone »** (ou l'activité `/app`) : un
+sélecteur liste toutes les applications installées avec recherche ; toucher
+une app l'ajoute au widget **et** à la barre. Aucun lien web n'est proposé.
 
 **Barre latérale** : déplaçable par sa poignée ⠿ (la position est mémorisée).
 Le bouton ☰ ouvre un panneau listant toutes les applications installées :
