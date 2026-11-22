@@ -17,8 +17,10 @@ The screen *is* the widget — no board, no wallpaper, no intermediate step.
   - **`/app`** the applications panel: add more apps, remove them with `×`.
     The command sits on **every** widget and its changes apply to **all**
     widgets at once.
-- While an application is open in a widget: **`←`** returns to the list,
-  **`↗`** opens it in a separate tab.
+- While an application is open in a window: **`←`** returns to the list. The
+  entries are **mobile applications**: a browser cannot launch your native
+  apps, so the window shows an honest message (no link is opened); the real
+  opening happens in the Android APK.
 - Everything persists: widgets, app catalog, per-widget open application,
   theme. Removing all widgets leaves a minimal empty screen with a `+`,
   honoured as-is on next launch.
@@ -26,18 +28,21 @@ The screen *is* the widget — no board, no wallpaper, no intermediate step.
 
 ## Adding an application (`/app`)
 
-1. Tap `/app` on any widget.
-2. Fill a glyph (optional, e.g. 🎵), a name, an address
-   (`deezer.com` is enough — `https://` is prepended).
-3. "Add to all widgets": the app appears in every widget's list at once.
+1. Tap `/app` (in the "More" tab).
+2. Fill a glyph (optional, e.g. 🎵), a name, and the **Android package** of the
+   app (optional on the web). **No web address**: these are mobile
+   applications, not links.
+3. "Add to every window": the app appears at once. In the Android APK, the
+   "Sidebar" screen offers a **picker of your installed applications** (with
+   search) — that is where you add your own apps.
 
-## Fair warning: sites that refuse the frame
+## Fair warning: mobile applications, no links
 
-Many major sites (WhatsApp, Google, Facebook, Instagram…) **forbid** being
-displayed inside a frame, via `X-Frame-Options` or CSP — that is *their*
-servers' decision, not a Multi-Widgets bug. The widget then shows their
-refusal message, and **`↗`** opens the application in a tab. Sites that
-allow embedding render normally inside the widget.
+Multi-Widgets opens **no web link**: the catalog entries are **mobile
+applications**. In a browser it is impossible to launch your native apps
+(sandbox) — the window therefore shows an honest message and nothing is
+opened. It is in the **Android APK** that your installed applications open
+directly (home-screen widget and sidebar), without any browser.
 
 ## Install on a phone
 
@@ -53,7 +58,7 @@ allow embedding render normally inside the widget.
 python3 -m http.server 8000
 ```
 
-Functional tests (33 assertions, jsdom):
+Functional tests (48 assertions, jsdom):
 
 ```bash
 npm install && npm test
@@ -81,10 +86,10 @@ native companion doing exactly what the Web cannot:
 
 - a **real Android widget** (8-cell grid) sitting on the home screen,
   outside of any opened application;
-- **one tap on a cell opens the application directly** in the browser —
-  Multi-Widgets itself never opens;
-- the native app only ever acts as a native `/app`: add or remove
-  applications, and the widget redraws immediately.
+- **one tap on a cell opens the installed native application**, with no web
+  link and no browser — Multi-Widgets itself never opens;
+- add/remove your installed applications from the app ("Sidebar" screen or
+  native `/app`); the widget and the bar redraw immediately.
 
 ### Get the APK without Android Studio
 1. GitHub → **Actions** → **APK** workflow → latest green run.

@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
-import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
@@ -136,7 +135,7 @@ class SidebarService : Service() {
         }
         conteneur.addView(poignee, LinearLayout.LayoutParams(MATCH, WRAP))
 
-        Store.load(ctx).take(6).forEach { a ->
+        Store.load(ctx).filter { it.paquet.isNotEmpty() }.take(6).forEach { a ->
             conteneur.addView(
                 vueApp(a),
                 LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(4) }
@@ -192,11 +191,11 @@ class SidebarService : Service() {
         return v
     }
 
-    /** Ouvre l'application native installée ; le lien web ne sert que de repli. */
+    /** Ouvre l'application native installée. Aucun lien web : si l'app n'est
+     *  pas installée, rien ne s'ouvre. */
     private fun lancer(a: Store.App) {
-        val natif = if (a.paquet.isNotEmpty()) LauncherRepository.launchIntent(this, a.paquet) else null
-        val i = (natif ?: Intent(Intent.ACTION_VIEW, Uri.parse(a.u))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        runCatching { startActivity(i) }
+        val i = if (a.paquet.isNotEmpty()) LauncherRepository.launchIntent(this, a.paquet) else null
+        if (i != null) runCatching { startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 
     private fun reconstruireBarre() {

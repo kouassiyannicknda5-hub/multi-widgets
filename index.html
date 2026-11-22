@@ -170,6 +170,9 @@ input[type=range]{accent-color:var(--acc1)}
 .sh-hd b{flex:1;font-size:14px}
 .sh-hd code{background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12px}
 .sh-note{color:var(--mute);font-size:11px;margin:0 0 8px;line-height:1.45}
+.appnote{display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;height:100%;text-align:center;padding:16px;color:var(--mute)}
+.appnote b{color:var(--ink);font-size:15px}
+.appnote span{font-size:12px;line-height:1.5}
 .row{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px dashed var(--line);font-size:13px}
 .row b{font-size:18px;font-weight:400}
 .row .rn{font-weight:700}
@@ -321,12 +324,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
 <div id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sht">
   <div class="sh-hd"><code>/app</code><b id="sht">Applications disponibles</b><button id="shc" type="button" aria-label="Fermer le panneau">✕</button></div>
-  <p class="sh-note">Sur le web, un navigateur ne peut pas ouvrir vos applications natives : les entrées ouvrent des sites. Dans l'APK Android, le widget et la barre ouvrent vos applications installées directement, sans lien web.</p>
+  <p class="sh-note">Ces entrées sont des <b>applications mobiles</b>. Sur le web, un navigateur ne peut pas les lancer : la fenêtre affiche un message et <b>aucun lien n’est ouvert</b>. L’ouverture réelle se fait dans l’APK Android, où vous choisissez vos applications installées.</p>
   <div id="shl"></div>
   <form id="shf">
     <input id="f-g" maxlength="4" placeholder="🎵" aria-label="Glyphe (facultatif)">
     <input id="f-n" placeholder="Nom (ex. Deezer)" required aria-label="Nom de l'application">
-    <input id="f-u" class="full" placeholder="Adresse (ex. https://www.deezer.com)" required aria-label="Adresse de l'application">
+    <input id="f-p" class="full" placeholder="Paquet Android (ex. deezer.android.app) — facultatif" aria-label="Paquet de l'application">
     <button type="submit">Ajouter à toutes les fenêtres</button>
   </form>
   <div class="sh-sec">Traduction &amp; voix (web)</div>
@@ -368,11 +371,11 @@ function withBuiltins(cat){
   return cat;
 }
 function defaults(){return withBuiltins([
-  {g:"💬",n:"WhatsApp",u:"https://web.whatsapp.com"},{g:"🐦",n:"X",u:"https://x.com"},
-  {g:"👥",n:"Facebook",u:"https://m.facebook.com"},{g:"🔎",n:"Google",u:"https://www.google.com"},
-  {g:"📷",n:"Instagram",u:"https://www.instagram.com"},{g:"▶",n:"YouTube",u:"https://m.youtube.com"},
-  {g:"✉",n:"Gmail",u:"https://mail.google.com"},{g:"📍",n:"Maps",u:"https://maps.google.com"},
-  {g:"✈",n:"Telegram",u:"https://web.telegram.org"},{g:"♪",n:"TikTok",u:"https://www.tiktok.com"}]);}
+  {g:"💬",n:"WhatsApp",p:"com.whatsapp"},{g:"🐦",n:"X",p:"com.twitter.android"},
+  {g:"👥",n:"Facebook",p:"com.facebook.katana"},{g:"🔎",n:"Google",p:"com.google.android.googlequicksearchbox"},
+  {g:"📷",n:"Instagram",p:"com.instagram.android"},{g:"▶",n:"YouTube",p:"com.google.android.youtube"},
+  {g:"✉",n:"Gmail",p:"com.google.android.gm"},{g:"📍",n:"Maps",p:"com.google.android.apps.maps"},
+  {g:"✈",n:"Telegram",p:"org.telegram.messenger"},{g:"♪",n:"TikTok",p:"com.zhiliaoapp.musically"}]);}
 var KEY="multi-widgets.v3";
 var state=null;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
@@ -535,9 +538,9 @@ function renderWindows(){
         emb.hidden=false;emb.querySelector(".n").textContent=ap.n;emb.querySelector(".out").style.display="none";
         body.innerHTML=VO_HTML;wireVo(body);
       }else{
-        emb.hidden=false;emb.querySelector(".n").textContent=ap.n;emb.querySelector(".out").style.display="";
-        emb.querySelector(".out").setAttribute("href",ap.u);
-        body.innerHTML='<iframe src="'+esc(ap.u)+'" title="'+esc(ap.n)+'" loading="lazy"></iframe>';
+        emb.hidden=false;emb.querySelector(".n").textContent=ap.n;emb.querySelector(".out").style.display="none";
+        body.innerHTML='<div class="appnote"><b>'+esc((ap.g?ap.g+" ":"")+ap.n)+'</b>'
+          +'<span>Application mobile — elle s’ouvre directement dans l’APK Android. Un navigateur web ne peut pas lancer vos applications natives : aucun lien n’est ouvert ici.</span></div>';
       }
     }
     paint();
@@ -765,7 +768,8 @@ var SHEET=document.getElementById("sheet"),SHL=document.getElementById("shl");
 function paintSheet(){
   var h="";
   state.catalog.forEach(function(a,k){
-    h+='<div class="row"><b>'+esc(a.g||"•")+'</b><span class="rn">'+esc(a.n)+'</span><span class="ru">'+esc(a.u)+'</span>'
+    var det=(a.u==="@built:translate"||a.u==="@built:voice")?"intégré":(a.p||"application mobile");
+    h+='<div class="row"><b>'+esc(a.g||"•")+'</b><span class="rn">'+esc(a.n)+'</span><span class="ru">'+esc(det)+'</span>'
       +'<button type="button" data-del="'+k+'" aria-label="Retirer '+esc(a.n)+'">×</button></div>';
   });
   SHL.innerHTML=h;
@@ -788,11 +792,10 @@ SHL.addEventListener("click",function(ev){
 });
 document.getElementById("shf").addEventListener("submit",function(ev){
   ev.preventDefault();
-  var g=document.getElementById("f-g").value.trim(),n=document.getElementById("f-n").value.trim(),u=document.getElementById("f-u").value.trim();
-  if(!n||!u)return;
-  if(!/^https?:\/\//i.test(u))u="https://"+u;
-  state.catalog.push({g:g,n:n,u:u});save();paintSheet();paintDock();renderWindows();
-  document.getElementById("f-g").value="";document.getElementById("f-n").value="";document.getElementById("f-u").value="";
+  var g=document.getElementById("f-g").value.trim(),n=document.getElementById("f-n").value.trim(),p=document.getElementById("f-p").value.trim();
+  if(!n)return;
+  state.catalog.push({g:g,n:n,p:p});save();paintSheet();paintDock();renderWindows();
+  document.getElementById("f-g").value="";document.getElementById("f-n").value="";document.getElementById("f-p").value="";
   announce(n+" ajouté à toutes les fenêtres");
 });
 document.getElementById("s-prov").addEventListener("change",function(){trSet("provider",this.value)});

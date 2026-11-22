@@ -4,10 +4,11 @@ import android.content.Context
 import org.json.JSONArray
 
 /**
- * Catalogue d'applications du widget d'écran d'accueil et de la barre latérale
- * (SharedPreferences, JSON). Une entrée référence de préférence une
- * APPLICATION INSTALLÉE via son [paquet] : elle s'ouvre alors directement, sans
- * lien web. L'URL [u] ne sert que de repli si l'application n'est pas installée.
+ * Catalogue d'APPLICATIONS du widget d'écran d'accueil et de la barre latérale
+ * (SharedPreferences, JSON). Chaque entrée référence une application installée
+ * via son [paquet] et s'ouvre directement. AUCUN lien web n'est utilisé : le
+ * champ [u] n'est conservé que pour relire d'anciennes sauvegardes ; il n'ouvre
+ * plus rien. Une entrée sans [paquet] est simplement ignorée.
  */
 object Store {
 
@@ -43,13 +44,13 @@ object Store {
     }
 
     fun defaults(): MutableList<App> = mutableListOf(
-        App("💬", "WhatsApp", "https://web.whatsapp.com", "com.whatsapp"),
-        App("🐦", "X", "https://x.com", "com.twitter.android"),
-        App("👥", "Facebook", "https://m.facebook.com", "com.facebook.katana"),
-        App("🔎", "Google", "https://www.google.com", "com.google.android.googlequicksearchbox"),
-        App("📷", "Instagram", "https://www.instagram.com", "com.instagram.android"),
-        App("▶", "YouTube", "https://m.youtube.com", "com.google.android.youtube"),
-        App("✉", "Gmail", "https://mail.google.com", "com.google.android.gm"),
-        App("📍", "Maps", "https://maps.google.com", "com.google.android.apps.maps"),
+        App("💬", "WhatsApp", "", "com.whatsapp"),
+        App("🐦", "X", "", "com.twitter.android"),
+        App("👥", "Facebook", "", "com.facebook.katana"),
+        App("🔎", "Google", "", "com.google.android.googlequicksearchbox"),
+        App("📷", "Instagram", "", "com.instagram.android"),
+        App("▶", "YouTube", "", "com.google.android.youtube"),
+        App("✉", "Gmail", "", "com.google.android.gm"),
+        App("📍", "Maps", "", "com.google.android.apps.maps"),
     )
 }

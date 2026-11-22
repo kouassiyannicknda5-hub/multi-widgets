@@ -11,7 +11,8 @@ import android.widget.ListView
 import android.widget.TextView
 import app.multiwidgets.core.LauncherRepository
 
-/** /app natif : choisir les applications du widget d'écran d'accueil. */
+/** /app natif : ajouter vos applications installées au widget et à la barre.
+ *  Aucun lien web — uniquement des applications du téléphone. */
 class WidgetConfigActivity : Activity() {
 
     private lateinit var apps: MutableList<Store.App>
@@ -39,36 +40,11 @@ class WidgetConfigActivity : Activity() {
             setOnClickListener { choisirApp() }
         })
 
-        val ligne = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        val g = EditText(this).apply { hint = "🎵"; setWidth(140) }
-        val n = EditText(this).apply { hint = "Nom (ex. Deezer)" }
-        ligne.addView(g); ligne.addView(n, LinearLayout.LayoutParams(0, -2, 1f))
-        root.addView(ligne)
-        val u = EditText(this).apply { hint = "Adresse (ex. https://www.deezer.com)" }
-        root.addView(u)
-        root.addView(TextView(this).apply {
-            text = "— ou, en repli seulement, un lien web —"
-            textSize = 12f
-            setPadding(0, 16, 0, 8)
-        })
-        root.addView(Button(this).apply {
-            text = "Ajouter ce lien web"
-            setOnClickListener {
-                val nom = n.text.toString().trim()
-                var url = u.text.toString().trim()
-                if (nom.isEmpty() || url.isEmpty()) return@setOnClickListener
-                if (!url.startsWith("http://", true) && !url.startsWith("https://", true)) url = "https://$url"
-                apps.add(Store.App(g.text.toString().trim(), nom, url))
-                Store.save(this@WidgetConfigActivity, apps)
-                refill()
-                g.text.clear(); n.text.clear(); u.text.clear()
-            }
-        })
         liste.setOnItemClickListener { _, _, i, _ ->
             val a = apps.getOrNull(i) ?: return@setOnItemClickListener
             AlertDialog.Builder(this)
                 .setTitle("Retirer ${a.n} ?")
-                .setMessage("L'application disparaîtra du widget de l'écran d'accueil.")
+                .setMessage("L'application disparaîtra du widget et de la barre latérale.")
                 .setPositiveButton("Retirer") { _, _ ->
                     apps.removeAt(i); Store.save(this, apps); refill()
                 }

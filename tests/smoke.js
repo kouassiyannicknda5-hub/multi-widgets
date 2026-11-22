@@ -66,7 +66,7 @@ function boot(storage) {
   await wait(20);
   click(window, win0.querySelector('.pick button[data-i="2"]'));
   await wait(20);
-  check("un site s'ouvre en cadre dans la fenêtre", win0.querySelector("iframe").getAttribute("src") === "https://web.whatsapp.com");
+  check("une application mobile n'ouvre AUCUN lien (message honnête, pas d'iframe)", win0.querySelector("iframe") === null && !!win0.querySelector(".appnote"));
   check("barre de titre : nom + − + ×", win0.querySelector(".wt").textContent.includes("WhatsApp") && !!win0.querySelector(".wcl"));
   click(window, win0.querySelector(".wcl"));
   await wait(20);
@@ -140,12 +140,12 @@ function boot(storage) {
   click(window, document.getElementById("p-apps"));
   await wait(20);
   document.getElementById("f-n").value = "Deezer";
-  document.getElementById("f-u").value = "www.deezer.com";
+  document.getElementById("f-p").value = "deezer.android.app";
   document.getElementById("shf").dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
   await wait(20);
   const st = JSON.parse(window.localStorage.getItem("multi-widgets.v3"));
   check("application ajoutée au catalogue (13)", st.catalog.length === 13);
-  check("schéma https normalisé", st.catalog[12].u === "https://www.deezer.com");
+  check("entrée enregistrée comme application (paquet), sans lien web", st.catalog[12].p === "deezer.android.app" && st.catalog[12].u === undefined);
   click(window, document.querySelector('#shl button[data-del="12"]'));
   await wait(20);
   check("× la retire partout", JSON.parse(window.localStorage.getItem("multi-widgets.v3")).catalog.length === 12);
