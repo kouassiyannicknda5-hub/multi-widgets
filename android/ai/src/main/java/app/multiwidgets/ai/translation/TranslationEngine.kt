@@ -17,25 +17,37 @@ object TranslationEngine {
 
     fun langues(): List<String> = TranslateLanguage.getAllLanguages()
 
-    fun modelePresent(langue: String): Boolean =
-        runCatching {
-            ModelManager.getInstance()
-                .isModelDownloaded(com.google.mlkit.nl.translate.TranslateRemoteModel.Builder(langue).build())
-        }.getOrDefault(false)
+    /* Registre local des modèles téléchargés : l'API ML Kit ne fournit qu'une
+       vérification asynchrone (Task<Boolean>), inutilisable synchrone dans le
+       routeur ; ce registre, mis à jour aux téléchargements/suppressions, est
+       la source de vérité de l'application. */
+    private fun registre(context: android.content.Context) =
+        context.getSharedPreferences("mw_ai", android.content.Context.MODE_PRIVATE)
 
-    suspend fun telecharger(langue: String): Boolean = suspendCoroutine { cont ->
-        val model = com.google.mlkit.nl.translate.TranslateRemoteModel.Builder(langue).build()
-        ModelManager.getInstance().download(model, DownloadConditions.Builder().build())
-            .addOnSuccessListener { cont.resumeWith(Result.success(true)) }
-            .addOnFailureListener { cont.resumeWith(Result.success(false)) }
-    }
+    fun modelePresent(context: android.content.Context, langue: String): Boolean =
+        registre(context).getBoolean("modele_$langue", false)
 
-    suspend fun supprimer(langue: String): Boolean = suspendCoroutine { cont ->
-        val model = com.google.mlkit.nl.translate.TranslateRemoteModel.Builder(langue).build()
-        ModelManager.getInstance().deleteModel(model)
-            .addOnSuccessListener { cont.resumeWith(Result.success(true)) }
-            .addOnFailureListener { cont.resumeWith(Result.success(false)) }
-    }
+    suspend fun telecharger(context: android.content.Context, langue: String): Boolean =
+        suspendCoroutine { cont ->
+            val model = com.google.mlkit.nl.translate.TranslateRemoteModel.Builder(langue).build()
+            ModelManager.getInstance().download(model, DownloadConditions.Builder().build())
+                .addOnSuccessListener {
+                    registre(context).edit().putBoolean("modele_$langue", true).apply()
+                    cont.resumeWith(Result.success(true))
+                }
+                .addOnFailureListener { cont.resumeWith(Result.success(false)) }
+        }
+
+    suspend fun supprimer(context: android.content.Context, langue: String): Boolean =
+        suspendCoroutine { cont ->
+            val model = com.google.mlkit.nl.translate.TranslateRemoteModel.Builder(langue).build()
+            ModelManager.getInstance().deleteModel(model)
+                .addOnSuccessListener {
+                    registre(context).edit().putBoolean("modele_$langue", false).apply()
+                    cont.resumeWith(Result.success(true))
+                }
+                .addOnFailureListener { cont.resumeWith(Result.success(false)) }
+        }
 
     suspend fun traduire(texte: String, source: String, cible: String): String? {
         val options = TranslatorOptions.Builder()

@@ -26,7 +26,7 @@ suspend fun traduireSelonRouteur(context: Context, texte: String): ResultatTradu
     val decision = ProcessingRouter.decider(
         ProcessingRouter.Entree(
             reseau = cm.activeNetwork != null,
-            modeleLocal = TranslationEngine.modelePresent(langue) && TranslationEngine.modelePresent(cible),
+            modeleLocal = TranslationEngine.modelePresent(context, langue) && TranslationEngine.modelePresent(context, cible),
             fournisseurConfigure = settings.get("fournisseur_url").isNotBlank(),
             mode = settings.get("mode_traitement").ifBlank { "auto" },
             eco = settings.get("eco").toBoolean(),

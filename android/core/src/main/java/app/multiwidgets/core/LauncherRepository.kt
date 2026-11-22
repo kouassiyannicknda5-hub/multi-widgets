@@ -12,14 +12,13 @@ object LauncherRepository {
 
     data class App(val nom: String, val paquet: String, val icone: Drawable?)
 
+    @Suppress("DEPRECATION")
     fun launchables(context: Context): List<App> {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val pm = context.packageManager
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            PackageManager.ResolveInfoFlags.of(0L)
-        else null
-        val infos = if (flags != null) pm.queryIntentActivities(intent, flags)
-        else @Suppress("DEPRECATION") pm.queryIntentActivities(intent, 0)
+        val infos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            pm.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0L))
+        else pm.queryIntentActivities(intent, 0)
         return infos.mapNotNull { ri ->
             val pa = ri.activityInfo?.packageName ?: return@mapNotNull null
             App(

@@ -99,14 +99,25 @@ class ScreenCaptureService : Service() {
         }
     }
 
+    /** Capture bornée : un seul buffer, copie tenant compte du pas de ligne. */
     private fun capter(): Bitmap? = runCatching {
         val image = reader?.acquireLatestImage() ?: return null
-        val planes = image.planes[0]
-        val buffer = planes.buffer
+        val plane = image.planes[0]
+        val buffer = plane.buffer
         val pixels = ByteArray(buffer.remaining())
         buffer.get(pixels)
-        val bmp = Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888)
-        bmp.copyPixelsFromBuffer(java.nio.ByteBuffer.wrap(pixels))
+        val pas = plane.rowStride
+        val bmp = if (pas == image.width * 4) {
+            Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888).also {
+                it.copyPixelsFromBuffer(java.nio.ByteBuffer.wrap(pixels))
+            }
+        } else {
+            val large = pas / 4
+            val brut = Bitmap.createBitmap(large, image.height, Bitmap.Config.ARGB_8888).also {
+                it.copyPixelsFromBuffer(java.nio.ByteBuffer.wrap(pixels))
+            }
+            Bitmap.createBitmap(brut, 0, 0, image.width, image.height).also { brut.recycle() }
+        }
         image.close()
         bmp
     }.getOrNull()
@@ -119,7 +130,8 @@ class ScreenCaptureService : Service() {
         val route = ProcessingRouter.decider(
             ProcessingRouter.Entree(
                 reseau = connexion(),
-                modeleLocal = TranslationEngine.modelePresent(langueSource) && TranslationEngine.modelePresent(cible),
+                modeleLocal = TranslationEngine.modelePresent(this@ScreenCaptureService, langueSource) &&
+                        TranslationEngine.modelePresent(this@ScreenCaptureService, cible),
                 fournisseurConfigure = settings.get("fournisseur_url").isNotBlank(),
                 mode = settings.get("mode_traitement").ifBlank { "auto" },
                 eco = settings.get("eco").toBoolean(),
@@ -156,7 +168,11 @@ class ScreenCaptureService : Service() {
             .setContentText("Capture consentie en cours. Touchez pour arrêter.")
             .setSmallIcon(android.R.drawable.ic_menu_translate)
             .build()
-        startForeground(NOTIF_ID, n, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            startForeground(NOTIF_ID, n, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+        } else {
+            startForeground(NOTIF_ID, n)
+        }
     }
 
     override fun onDestroy() {
