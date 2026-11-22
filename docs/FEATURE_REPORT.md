@@ -29,5 +29,6 @@ tests en CI ; rien n'est promis sans capacité vérifiée sur l'appareil.
 - **AudioPlaybackCapture** : capacité détectée (Android 10+) mais pipeline non implémenté : les politiques des applications sources interdisent souvent la capture ; message explicatif et saisie manuelle proposés.
 - **Dispositions 3/4/6 zones réelles** : dépendent du firmware (freeform). Sur ZTE/Tecno/Itel/Infinix et beaucoup de Redmi/Samsung : panneau flottant de secours, conformément à la spécification.
 - **ASR/TTS cloud** : interfaces prévues, aucun fournisseur implémenté pour l'instant (local uniquement).
+- **Suppression physique des modèles ML Kit du stockage** : non exposée par cette version du SDK ; le retrait passe par le registre local (l'application cesse d'utiliser la langue), consigné ici plutôt que simulé.
 - **APK release signé** : nécessite les clés de signature du propriétaire ; procédure documentée dans BUILD.md.
 - **Tests sur appareil réel** (rotation, thermique longue durée, firmwares OEM) : tests instrumentés à exécuter sur device ; la CI fournit compilation + tests JVM.

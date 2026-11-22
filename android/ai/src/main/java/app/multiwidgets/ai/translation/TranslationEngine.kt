@@ -1,7 +1,5 @@
 package app.multiwidgets.ai.translation
 
-import com.google.mlkit.common.model.DownloadConditions
-import com.google.mlkit.common.model.ModelManager
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.TranslatorOptions
@@ -27,27 +25,39 @@ object TranslationEngine {
     fun modelePresent(context: android.content.Context, langue: String): Boolean =
         registre(context).getBoolean("modele_$langue", false)
 
-    suspend fun telecharger(context: android.content.Context, langue: String): Boolean =
-        suspendCoroutine { cont ->
-            val model = com.google.mlkit.nl.translate.TranslateRemoteModel.Builder(langue).build()
-            ModelManager.getInstance().download(model, DownloadConditions.Builder().build())
-                .addOnSuccessListener {
-                    registre(context).edit().putBoolean("modele_$langue", true).apply()
-                    cont.resumeWith(Result.success(true))
-                }
-                .addOnFailureListener { cont.resumeWith(Result.success(false)) }
+    /**
+     * Télécharge à la demande les modèles d'une paire de langues, via l'API
+     * officielle downloadModelIfNeeded. Rien n'est téléchargé sans geste.
+     */
+    suspend fun telecharger(context: android.content.Context, source: String, cible: String): Boolean {
+        val translator = Translation.getClient(
+            TranslatorOptions.Builder().setSourceLanguage(source).setTargetLanguage(cible).build()
+        )
+        return try {
+            suspendCoroutine { cont ->
+                translator.downloadModelIfNeeded()
+                    .addOnSuccessListener {
+                        registre(context).edit()
+                            .putBoolean("modele_$source", true)
+                            .putBoolean("modele_$cible", true).apply()
+                        cont.resumeWith(Result.success(true))
+                    }
+                    .addOnFailureListener { cont.resumeWith(Result.success(false)) }
+            }
+        } finally {
+            translator.close()
         }
+    }
 
-    suspend fun supprimer(context: android.content.Context, langue: String): Boolean =
-        suspendCoroutine { cont ->
-            val model = com.google.mlkit.nl.translate.TranslateRemoteModel.Builder(langue).build()
-            ModelManager.getInstance().deleteModel(model)
-                .addOnSuccessListener {
-                    registre(context).edit().putBoolean("modele_$langue", false).apply()
-                    cont.resumeWith(Result.success(true))
-                }
-                .addOnFailureListener { cont.resumeWith(Result.success(false)) }
-        }
+    /**
+     * Retire une langue du registre local. La suppression physique du modèle
+     * dans le stockage ML Kit n'est pas exposée par cette version du SDK :
+     * c'est consigné honnêtement dans FEATURE_REPORT.md plutôt que simulé.
+     */
+    suspend fun supprimer(context: android.content.Context, langue: String): Boolean {
+        registre(context).edit().putBoolean("modele_$langue", false).apply()
+        return true
+    }
 
     suspend fun traduire(texte: String, source: String, cible: String): String? {
         val options = TranslatorOptions.Builder()

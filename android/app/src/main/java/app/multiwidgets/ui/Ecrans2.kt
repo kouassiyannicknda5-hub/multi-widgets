@@ -147,6 +147,8 @@ fun EcranLangues() {
 fun EcranModeles() {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
+    val regl = rememberSettings()
+    val cible = regl.value["langue_cible"]?.ifBlank { "fr" } ?: "fr"
     var etat by remember { mutableStateOf(TranslationEngine.langues().take(20).map { it to TranslationEngine.modelePresent(ctx, it) }) }
     val gate = remember { WhisperGate.evaluer(ctx, WhisperGate.fichierModele(ctx).exists(), false) }
     Page("Gestion des modèles IA") { pv ->
@@ -159,10 +161,11 @@ fun EcranModeles() {
                         modifier = Modifier.weight(1f))
                     OutlinedButton(onClick = {
                         scope.launch {
-                            if (present) TranslationEngine.supprimer(ctx, langue) else TranslationEngine.telecharger(ctx, langue)
+                            if (present) TranslationEngine.supprimer(ctx, langue)
+                            else TranslationEngine.telecharger(ctx, langue, cible)
                             etat = TranslationEngine.langues().take(20).map { it to TranslationEngine.modelePresent(ctx, it) }
                         }
-                    }) { Text(if (present) "Supprimer" else "Télécharger") }
+                    }) { Text(if (present) "Retirer du registre" else "Télécharger (→ $cible)") }
                 }
             }
             item {

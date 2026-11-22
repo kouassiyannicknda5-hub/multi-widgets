@@ -28,10 +28,6 @@ dependencies {
     // Détection de langue et traduction hors ligne (modèles à la demande).
     implementation 'com.google.mlkit:language-id:17.0.6'
     implementation 'com.google.mlkit:translate:17.0.3'
-    // ModelManager / DownloadConditions : dépendance commune de ML Kit,
-    // déclarée explicitement car les artefacts métiers ne l'exposent pas
-    // toujours au classpath de compilation.
-    implementation 'com.google.mlkit:common:18.10.0'
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0'
