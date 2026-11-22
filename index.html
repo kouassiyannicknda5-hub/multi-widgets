@@ -47,6 +47,20 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .pick b{font-size:22px;font-weight:400}
 .pick .vide{grid-column:1/-1;color:var(--mute);font-size:12px;text-align:center;padding:14px 6px}
 
+/* Applications intégrées : traducteur et voix vivent DANS le widget */
+.tr,.vo{display:flex;flex-direction:column;gap:8px;height:100%}
+.tr textarea{flex:1;min-height:70px;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--panel);color:var(--ink);resize:none}
+.tr-bar,.vo-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tr-bar select,.row select{font:inherit;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:4px;background:var(--tile);color:var(--ink)}
+.tr-bar button,.vo-bar button,.vo-go{background:var(--accent);color:#fff;border-radius:10px;padding:7px 10px;font-weight:700;font-size:12px}
+.tr-out,.vo-out{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:13px;min-height:40px;white-space:pre-wrap}
+.tr-det,.vo-note{font-size:11px;color:var(--mute)}
+.vo-src{font-size:12px;color:var(--mute);font-style:italic}
+.vo-go{align-self:flex-start}
+input[type=range]{accent-color:var(--accent)}
+.sh-sec{margin-top:14px;font-size:13px;font-weight:700}
+.row input.full{flex:1;font:inherit;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:6px;background:var(--tile);color:var(--ink);min-width:0}
+
 /* Barre de l'application ouverte dans le widget */
 .emb{display:flex;align-items:center;gap:6px;padding:5px 7px;border-bottom:1px solid var(--line);background:var(--panel)}
 .emb .n{flex:1;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -105,6 +119,23 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
     <input id="f-u" class="full" placeholder="Adresse (ex. https://www.deezer.com)" required aria-label="Adresse de l'application">
     <button type="submit">Ajouter à tous les widgets</button>
   </form>
+  <div class="sh-sec">Traduction &amp; voix (web)</div>
+  <div class="row"><span class="rn">Fournisseur</span>
+    <select id="s-prov" aria-label="Fournisseur de traduction">
+      <option value="mymemory">MyMemory (sans clé)</option>
+      <option value="libre">LibreTranslate (configuré)</option>
+    </select>
+  </div>
+  <div class="row"><input id="s-url" class="full" placeholder="URL LibreTranslate (facultatif)" aria-label="URL du fournisseur"></div>
+  <div class="row"><input id="s-key" class="full" type="password" placeholder="Clé API (facultatif, stockage local privé)" aria-label="Clé API"></div>
+  <div class="row"><span class="rn">Langue cible</span>
+    <select id="s-tgt" aria-label="Langue cible">
+      <option value="fr">français</option><option value="en">anglais</option><option value="es">espagnol</option>
+      <option value="de">allemand</option><option value="pt">portugais</option><option value="it">italien</option>
+      <option value="zh">chinois</option><option value="ja">japonais</option><option value="ko">coréen</option>
+      <option value="ru">russe</option><option value="ar">arabe</option><option value="hi">hindi</option>
+    </select>
+  </div>
   <div class="sh-ft"><button id="theme" type="button">🌙</button><span>Thème — sans choix, suit le système.</span></div>
 </div>
 
@@ -125,8 +156,25 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
    /app, présente sur chaque widget, ajoute des applications à tous.
    ======================================================================== */
 
+/* Applications intégrées : elles s'ouvrent DANS le widget avec un moteur
+   natif du navigateur (traduction HTTP, Web Speech API), pas dans un cadre. */
+var BUILTINS=[
+  {g:"🌐",n:"Traducteur",u:"@built:translate"},
+  {g:"🎙",n:"Voix",u:"@built:voice"}
+];
+function withBuiltins(cat){
+  /* En sens inverse : après les unshift, l'ordre déclaré est respecté
+     (Traducteur puis Voix en tête). */
+  for(var i=BUILTINS.length-1;i>=0;i--){
+    var b=BUILTINS[i];
+    var present=cat.some(function(a){return a.u===b.u});
+    if(!present)cat.unshift(b);
+  }
+  return cat;
+}
+
 /* Catalogue par défaut : les applications déjà accessibles partout. */
-function defaults(){return [
+function defaults(){return withBuiltins([
   {g:"💬",n:"WhatsApp",u:"https://web.whatsapp.com"},
   {g:"🐦",n:"X",u:"https://x.com"},
   {g:"👥",n:"Facebook",u:"https://m.facebook.com"},
@@ -137,7 +185,7 @@ function defaults(){return [
   {g:"📍",n:"Maps",u:"https://maps.google.com"},
   {g:"✈",n:"Telegram",u:"https://web.telegram.org"},
   {g:"♪",n:"TikTok",u:"https://www.tiktok.com"}
-];}
+]);}
 
 var KEY="multi-widgets.v2",KEY1="multi-widgets.v1",THEME_KEY="multi-widgets.theme",MAX=10;
 var SCREEN=document.getElementById("screen"),SHEET=document.getElementById("sheet"),SHL=document.getElementById("shl"),LIVE=document.getElementById("live");
@@ -156,7 +204,7 @@ function save(){
 function load(){
   try{
     var d=JSON.parse(localStorage.getItem(KEY));
-    if(d&&Array.isArray(d.widgets)&&Array.isArray(d.catalog))return d;
+    if(d&&Array.isArray(d.widgets)&&Array.isArray(d.catalog)){d.catalog=withBuiltins(d.catalog);return d}
   }catch(e){}
   try{
     var v1=JSON.parse(localStorage.getItem(KEY1));
@@ -192,13 +240,141 @@ function paintWidget(w,el,i){
   }else{
     var a=state.catalog[w.app];
     n.textContent=a.g?a.g+" "+a.n:a.n;
-    emb.hidden=false;
-    emb.querySelector(".n").textContent=a.n;
-    emb.querySelector(".out").setAttribute("href",a.u);
-    /* L'application s'ouvre DANS le widget. Certains sites refusent d'être
-       encadrés (X-Frame-Options) : la flèche ↗ ouvre alors dans un onglet. */
-    body.innerHTML='<iframe src="'+esc(a.u)+'" title="'+esc(a.n)+'" loading="lazy" allow="fullscreen; clipboard-write; payment"></iframe>';
+    if(a.u==="@built:translate"){
+      emb.hidden=false;emb.querySelector(".n").textContent=a.n;
+      emb.querySelector(".out").style.display="none";   /* pas d'onglet externe : le moteur est interne */
+      body.innerHTML=TR_HTML;wireTr(body);
+    }else if(a.u==="@built:voice"){
+      emb.hidden=false;emb.querySelector(".n").textContent=a.n;
+      emb.querySelector(".out").style.display="none";
+      body.innerHTML=VO_HTML;wireVo(body);
+    }else{
+      emb.hidden=false;
+      emb.querySelector(".n").textContent=a.n;
+      emb.querySelector(".out").style.display="";
+      emb.querySelector(".out").setAttribute("href",a.u);
+      /* L'application s'ouvre DANS le widget. Certains sites refusent d'être
+         encadrés (X-Frame-Options) : la flèche ↗ ouvre alors dans un onglet. */
+      body.innerHTML='<iframe src="'+esc(a.u)+'" title="'+esc(a.n)+'" loading="lazy" allow="fullscreen; clipboard-write; payment"></iframe>';
+    }
   }
+}
+
+/* --- Moteurs web de traduction et de voix --------------------------------
+   Réglages lus/écrits en localStorage privé ; aucune clé dans le code. */
+function trGet(k,d){try{var v=localStorage.getItem("mw.tr."+k);return v===null?d:v}catch(e){return d}}
+function trSet(k,v){try{localStorage.setItem("mw.tr."+k,v)}catch(e){}}
+
+/* Détection de langue par écriture puis mots-outils : suffisant pour choisir
+   la paire, et toujours affichée pour vérification humaine. */
+function detectLang(t){
+  if(/[\u4e00-\u9fff]/.test(t))return "zh";
+  if(/[\u3040-\u30ff]/.test(t))return "ja";
+  if(/[\uac00-\ud7af]/.test(t))return "ko";
+  if(/[\u0400-\u04ff]/.test(t))return "ru";
+  if(/[\u0600-\u06ff]/.test(t))return "ar";
+  if(/[\u0900-\u097f]/.test(t))return "hi";
+  if(/[\u0370-\u03ff]/.test(t))return "el";
+  var w=t.toLowerCase();
+  if(/\b(the|is|are|and|of|to|with)\b/.test(w))return "en";
+  if(/\b(le|la|les|est|une|des|mais|pour|dans)\b/.test(w))return "fr";
+  if(/\b(el|una|los|las|pero|para|con)\b/.test(w))return "es";
+  return "fr";
+}
+
+function translateText(text,src,tgt){
+  return new Promise(function(res,rej){
+    if(!window.fetch){rej(new Error("traduction réseau non prise en charge par ce navigateur"));return}
+    var prov=trGet("provider","mymemory");
+    if(prov==="libre"&&trGet("libre_url","")){
+      var cle=trGet("libre_key","");
+      var corps={q:text,source:src,target:tgt,format:"text"};
+      if(cle)corps.api_key=cle;
+      fetch(trGet("libre_url","").replace(/\/+$/,"")+"/translate",{
+        method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(corps)
+      }).then(function(r){if(!r.ok)return rej(new Error("HTTP "+r.status));return r.json()})
+        .then(function(j){res(j.translatedText||"")}).catch(rej);
+    }else{
+      fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+
+        "&langpair="+encodeURIComponent(src+"|"+tgt))
+        .then(function(r){if(!r.ok)return rej(new Error("HTTP "+r.status));return r.json()})
+        .then(function(j){var t=j&&j.responseData&&j.responseData.translatedText;
+          if(!t)return rej(new Error("réponse vide du fournisseur"));res(t)})
+        .catch(rej);
+    }
+  });
+}
+
+function speak(text){
+  if(!window.speechSynthesis){announce("Synthèse vocale non prise en charge par ce navigateur");return}
+  var u=new SpeechSynthesisUtterance(text);
+  u.lang=trGet("target","fr");
+  u.rate=parseFloat(trGet("rate","1"))||1;
+  var vs=window.speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(u.lang)===0});
+  if(vs.length)u.voice=vs[0];
+  window.speechSynthesis.speak(u);
+}
+
+var TR_HTML='<div class="tr"><textarea class="tr-src" placeholder="Texte à traduire : russe, chinois, anglais, français…"></textarea>'
+  +'<div class="tr-bar"><select class="tr-src-l" aria-label="Langue source"><option value="auto">auto</option><option value="fr">fr</option><option value="en">en</option><option value="es">es</option><option value="ru">ru</option><option value="zh">zh</option><option value="ja">ja</option><option value="ko">ko</option><option value="ar">ar</option><option value="hi">hi</option></select>'
+  +'<span class="tr-det"></span><button class="tr-go" type="button">Traduire</button></div>'
+  +'<div class="tr-out" aria-live="polite"></div>'
+  +'<div class="tr-bar"><button class="tr-copy" type="button">Copier</button><button class="tr-speak" type="button">🔊 Écouter</button></div></div>';
+
+function wireTr(body){
+  var src=body.querySelector(".tr-src"),out=body.querySelector(".tr-out"),det=body.querySelector(".tr-det");
+  body.querySelector(".tr-go").addEventListener("click",function(){
+    var t=src.value.trim();if(!t)return;
+    var sel=body.querySelector(".tr-src-l").value;
+    var lang=sel==="auto"?detectLang(t):sel;
+    det.textContent="langue détectée : "+lang;
+    var tgt=trGet("target","fr");if(tgt===lang)tgt=(lang==="fr"?"en":"fr");
+    out.textContent="…";
+    translateText(t,lang,tgt).then(function(r){out.textContent=r;announce("Traduction affichée")})
+      .catch(function(e){out.textContent="Erreur : "+e.message+". Vérifiez la connexion, ou configurez un fournisseur dans /app."});
+  });
+  body.querySelector(".tr-copy").addEventListener("click",function(){
+    if(navigator.clipboard)navigator.clipboard.writeText(out.textContent);
+    announce("Traduction copiée");
+  });
+  body.querySelector(".tr-speak").addEventListener("click",function(){speak(out.textContent)});
+}
+
+var VO_HTML='<div class="vo"><button class="vo-go" type="button">🎙 Écouter</button>'
+  +'<span class="vo-src"></span><div class="vo-out" aria-live="polite"></div>'
+  +'<div class="vo-bar"><button class="vo-stop" type="button">■ Stop</button>'
+  +'<label>Vitesse <input class="vo-rate" type="range" min="0.5" max="2" step="0.1" value="1"></label></div>'
+  +'<div class="vo-note"></div></div>';
+
+function wireVo(body){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var note=body.querySelector(".vo-note"),srcEl=body.querySelector(".vo-src"),out=body.querySelector(".vo-out"),go=body.querySelector(".vo-go");
+  if(!SR)note.textContent="Reconnaissance vocale absente de ce navigateur (Chrome la fournit). La synthèse vocale, elle, reste disponible via 🔊.";
+  var rec=null;
+  function pipeline(s){
+    var lang=detectLang(s);var tgt=trGet("target","fr");if(tgt===lang)tgt=(lang==="fr"?"en":"fr");
+    out.textContent="…";
+    translateText(s,lang,tgt).then(function(r){out.textContent=r;speak(r);announce("Traduction vocale prête")})
+      .catch(function(e){out.textContent="Erreur : "+e.message});
+  }
+  go.addEventListener("click",function(){
+    if(!SR){announce("Reconnaissance vocale non prise en charge ici");return}
+    if(rec){rec.stop();return}
+    rec=new SR();rec.lang=navigator.language||"fr-FR";rec.interimResults=true;
+    rec.onresult=function(e){
+      var s="";for(var i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;
+      srcEl.textContent=s;
+      if(e.results[e.results.length-1].isFinal)pipeline(s);
+    };
+    rec.onend=function(){rec=null;go.textContent="🎙 Écouter"};
+    rec.start();go.textContent="■ Arrêter";announce("Écoute en cours");
+  });
+  body.querySelector(".vo-stop").addEventListener("click",function(){
+    if(window.speechSynthesis)window.speechSynthesis.cancel();
+    if(rec)rec.stop();
+  });
+  var rate=body.querySelector(".vo-rate");rate.value=trGet("rate","1");
+  rate.addEventListener("input",function(){trSet("rate",rate.value)});
 }
 function render(){
   SCREEN.innerHTML="";
@@ -255,9 +431,19 @@ function paintSheet(){
 }
 function openSheet(){
   paintSheet();SHEET.hidden=false;
+  /* Réglages traduction & voix : rechargés à chaque ouverture du panneau. */
+  document.getElementById("s-prov").value=trGet("provider","mymemory");
+  document.getElementById("s-url").value=trGet("libre_url","");
+  document.getElementById("s-key").value=trGet("libre_key","");
+  document.getElementById("s-tgt").value=trGet("target","fr");
   document.getElementById("shc").focus();
   announce("Panneau /app ouvert : "+state.catalog.length+" applications");
 }
+/* Réglages traduction & voix : persistés dès la saisie, stockage local privé. */
+document.getElementById("s-prov").addEventListener("change",function(){trSet("provider",this.value);announce("Fournisseur : "+this.value)});
+document.getElementById("s-url").addEventListener("change",function(){trSet("libre_url",this.value)});
+document.getElementById("s-key").addEventListener("change",function(){trSet("libre_key",this.value)});
+document.getElementById("s-tgt").addEventListener("change",function(){trSet("target",this.value);announce("Langue cible : "+this.value)});
 document.getElementById("shc").addEventListener("click",function(){SHEET.hidden=true});
 SHL.addEventListener("click",function(ev){
   var b=ev.target.closest("button[data-del]");

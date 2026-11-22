@@ -115,3 +115,25 @@ capabilities, connectivity, thermal state, memory and privacy preferences.
 
 Full documentation in `docs/`: BUILD.md, INSTALL.md, API-CONFIG.md,
 FEATURE_REPORT.md (finished vs unfinished, nothing promised unverified).
+
+## In-browser translation & voice (web novelty)
+
+Two built-in apps join every widget's catalog:
+
+- **🌐 Translator**: paste text (Russian, Chinese, English, French…), the
+  language is detected (script then stopwords, always shown for human
+  verification), the translation renders inside the widget with **Copy** and
+  **🔊 Listen** (browser speech synthesis).
+- **🎙 Voice**: speak, the browser recognises (Web Speech API, Chrome),
+  translates, shows the translation as a subtitle and speaks it; speed
+  control, Stop button. Where recognition is unavailable, an honest message
+  says so.
+
+Settings in **/app** → "Translation & voice": **MyMemory** provider (no key,
+default) or **LibreTranslate** (optional URL and key, kept in private local
+storage, never in code); target language (fr, en, es, de, pt, it, zh, ja, ko,
+ru, ar, hi).
+
+Assumed limits: web translation needs network (browsers do not carry the
+Android APK's offline models); speech recognition depends on the browser
+(Chrome provides it, Firefox does not).

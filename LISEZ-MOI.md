@@ -106,3 +106,25 @@ confidentialité.
 Documentation complète dans `docs/` : BUILD.md, INSTALL.md, API-CONFIG.md,
 FEATURE_REPORT.md (fonctions terminées et non terminées, sans rien promettre
 non vérifié).
+
+## Traduction et voix DANS le navigateur (nouveauté web)
+Deux applications intégrées rejoignent le catalogue de chaque widget :
+
+- **🌐 Traducteur** : collez un texte (russe, chinois, anglais, français…),
+  la langue est détectée (écriture puis mots-outils, toujours affichée pour
+  vérification), la traduction s'affiche dans le widget, avec **Copier** et
+  **🔊 Écouter** (synthèse vocale du navigateur).
+- **🎙 Voix** : parlez, le navigateur reconnaît (Web Speech API, Chrome),
+  traduit, affiche la traduction comme sous-titre et la dit à voix haute ;
+  réglage de vitesse, bouton Stop. Si le navigateur ne fournit pas la
+  reconnaissance, un message honnête l'explique.
+
+Réglages dans **/app** → section « Traduction & voix » :
+- fournisseur **MyMemory** (sans clé, par défaut) ou **LibreTranslate**
+  (URL et clé facultatives, gardées dans le stockage local privé, jamais
+  dans le code) ;
+- langue cible (fr, en, es, de, pt, it, zh, ja, ko, ru, ar, hi).
+
+Limites assumées : la traduction web passe par le réseau (le navigateur ne
+porte pas les modèles hors ligne de l'APK Android) ; la reconnaissance vocale
+dépend du navigateur (Chrome la fournit, Firefox non).
