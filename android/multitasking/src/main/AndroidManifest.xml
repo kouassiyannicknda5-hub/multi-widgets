@@ -14,7 +14,15 @@
         <!-- /app natif : réglage du widget -->
         <activity android:name=".WidgetConfigActivity" android:exported="false" />
 
-        <!-- Barre latérale flottante -->
-        <service android:name=".SidebarService" android:exported="false" />
+        <!-- Barre latérale flottante : service au premier plan de type
+             specialUse, pour rester visible hors de l'application. -->
+        <service
+            android:name=".SidebarService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Barre laterale flottante affichee par-dessus d autres applications" />
+        </service>
     </application>
 </manifest>

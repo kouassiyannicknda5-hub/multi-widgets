@@ -1,11 +1,16 @@
 package app.multiwidgets.ai.subtitles
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
+import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
 import android.view.WindowManager
@@ -70,10 +75,41 @@ class SubtitleOverlayService : Service() {
         }
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        demarrerRappel()
+        return START_STICKY
+    }
+
+    /** Service au premier plan : les sous-titres restent visibles par-dessus
+     *  l'application vidéo même quand Multi-widgets est en arrière-plan.
+     *  Type « specialUse » obligatoire depuis Android 14. */
+    private fun demarrerRappel() {
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(
+            NotificationChannel(CANAL, "Sous-titres flottants", NotificationManager.IMPORTANCE_LOW)
+        )
+        val n = Notification.Builder(this, CANAL)
+            .setContentTitle("Sous-titres traduits actifs")
+            .setContentText("Affichés par-dessus vos applications.")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setOngoing(true)
+            .build()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(NOTIF_ID, n)
+        }
+    }
+
     override fun onDestroy() {
         job?.cancel(); scope.cancel()
         vue?.let { runCatching { wm?.removeView(it) } }
         vue = null
         super.onDestroy()
+    }
+
+    private companion object {
+        const val CANAL = "sous_titres"
+        const val NOTIF_ID = 43
     }
 }

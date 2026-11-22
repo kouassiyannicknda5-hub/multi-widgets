@@ -96,11 +96,16 @@ fun EcranSousTitres() {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Fenêtre flottante : ")
                 Switch(checked = overlay, onCheckedChange = { on ->
-                    overlay = on
-                    if (on) ctx.startService(Intent(ctx, SubtitleOverlayService::class.java))
-                    else ctx.stopService(Intent(ctx, SubtitleOverlayService::class.java))
+                    if (on && Permissions.overlayGranted(ctx)) {
+                        runCatching { androidx.core.content.ContextCompat.startForegroundService(ctx, Intent(ctx, SubtitleOverlayService::class.java)) }
+                        overlay = true
+                    } else {
+                        ctx.stopService(Intent(ctx, SubtitleOverlayService::class.java))
+                        overlay = false
+                    }
                 })
             }
+            if (!Permissions.overlayGranted(ctx)) Text("Autorisez la superposition (écran « Barre latérale ») pour afficher les sous-titres par-dessus vos applications.", style = MaterialTheme.typography.bodySmall)
             Button(onClick = { SubtitleBus.vider() }) { Text("Vider la file") }
             LazyColumn {
                 items(segments.reversed()) { s ->
